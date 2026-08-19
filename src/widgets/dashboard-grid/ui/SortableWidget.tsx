@@ -21,15 +21,16 @@ export const SortableWidget = ({ widget }: SortableWidgetProps) => {
   } = useSortable({ id: widget.id });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.3 : 1,
+    zIndex: isDragging ? 50 : 1,
   };
 
   const renderWidgetContent = () => {
     switch (widget.type) {
       case "todo":
-        return <TodoWidget />;
+        return <TodoWidget widgetId={widget.id} />;
       default:
         return (
           <div className="text-sm text-muted-foreground">
@@ -40,7 +41,13 @@ export const SortableWidget = ({ widget }: SortableWidgetProps) => {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="h-fit touch-none"
+    >
       <WidgetFrame id={widget.id} title={widget.title}>
         {renderWidgetContent()}
       </WidgetFrame>

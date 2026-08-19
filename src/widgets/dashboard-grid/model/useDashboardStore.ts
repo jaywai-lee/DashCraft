@@ -7,6 +7,7 @@ interface DashboardState {
   addWidget: (widget: Omit<Widget, "id">) => void;
   removeWidget: (id: string) => void;
   updateLayouts: (layouts: LayoutItem[]) => void;
+  setWidgets: (widgets: Widget[]) => void;
   resetDashboard: () => void;
 }
 
@@ -49,6 +50,8 @@ export const useDashboardStore = create<DashboardState>()(
               : widget;
           }),
         })),
+
+      setWidgets: (widgets) => set({ widgets }),
 
       resetDashboard: () => set({ widgets: INITIAL_WIDGETS }),
     }),

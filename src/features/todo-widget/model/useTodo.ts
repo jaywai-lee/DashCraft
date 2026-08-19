@@ -3,15 +3,16 @@
 import React, { useState } from "react";
 import { useTodoStore } from "./useTodoStore";
 
-export const useTodo = () => {
-  const { todos, addTodo, toggleTodo, deleteTodo } = useTodoStore();
+export const useTodo = (widgetId: string) => {
+  const { getTodos, addTodo, toggleTodo, deleteTodo } = useTodoStore();
+  const todos = getTodos(widgetId);
   const [inputText, setInputText] = useState("");
 
   const handleAddTodo = (e: React.SubmitEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
 
-    addTodo(inputText);
+    addTodo(widgetId, inputText);
     setInputText("");
   };
 
@@ -25,8 +26,8 @@ export const useTodo = () => {
     inputText,
     setInputText,
     addTodo: handleAddTodo,
-    toggleTodo,
-    deleteTodo,
+    toggleTodo: (id: string) => toggleTodo(widgetId, id),
+    deleteTodo: (id: string) => deleteTodo(widgetId, id),
     progressPercent,
   };
 };

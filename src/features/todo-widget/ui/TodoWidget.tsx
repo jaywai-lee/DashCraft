@@ -6,7 +6,11 @@ import { TodoForm } from "./TodoForm";
 import { TodoList } from "./TodoList";
 import { TodoProgress } from "./TodoProgress";
 
-export const TodoWidget = () => {
+interface TodoWidgetProps {
+  widgetId: string;
+}
+
+export const TodoWidget = ({ widgetId }: TodoWidgetProps) => {
   const [isMounted, setIsMounted] = useState(false);
   const {
     todos,
@@ -16,7 +20,7 @@ export const TodoWidget = () => {
     toggleTodo,
     deleteTodo,
     progressPercent,
-  } = useTodo();
+  } = useTodo(widgetId);
 
   useEffect(() => {
     setIsMounted(true);

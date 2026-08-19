@@ -18,10 +18,11 @@ import {
 } from "@dnd-kit/sortable";
 import { SortableWidget } from "./SortableWidget";
 import { useEffect, useState } from "react";
+import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 
 export const DashboardGrid = () => {
   const [isMounted, setIsMounted] = useState(false);
-  const { widgets, updateLayouts } = useDashboardStore();
+  const { widgets, setWidgets } = useDashboardStore();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -42,13 +43,7 @@ export const DashboardGrid = () => {
       const newIndex = widgets.findIndex((w) => w.id === over.id);
 
       const newWidgets = arrayMove(widgets, oldIndex, newIndex);
-      const updatedLayouts = newWidgets.map((w, index) => ({
-        ...w.layout,
-        x: index % 3,
-        y: Math.floor(index / 3),
-      }));
-
-      updateLayouts(updatedLayouts);
+      setWidgets(newWidgets);
     }
   };
 
@@ -69,12 +64,13 @@ export const DashboardGrid = () => {
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
+      modifiers={[restrictToWindowEdges]}
     >
       <SortableContext
         items={widgets.map((w) => w.id)}
         strategy={rectSortingStrategy}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 items-stretch">
           {widgets.map((widget) => (
             <SortableWidget key={widget.id} widget={widget} />
           ))}
