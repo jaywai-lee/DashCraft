@@ -1,5 +1,5 @@
 import { CheckCircle2, Circle, Trash2 } from "lucide-react";
-import { TodoItemData } from "../model/useTodo";
+import { TodoItemData } from "../model/types";
 
 interface TodoListProps {
   todos: TodoItemData[];

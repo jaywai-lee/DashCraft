@@ -1,38 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTodoStore } from "./useTodoStore";
 
-export interface TodoItemData {
-  id: string;
-  text: string;
-  completed: boolean;
-}
-
-export const useTodo = (initialTodos: TodoItemData[] = []) => {
-  const [todos, setTodos] = useState<TodoItemData[]>(initialTodos);
+export const useTodo = () => {
+  const { todos, addTodo, toggleTodo, deleteTodo } = useTodoStore();
   const [inputText, setInputText] = useState("");
 
-  const addTodo = (e: React.SubmitEvent) => {
+  const handleAddTodo = (e: React.SubmitEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
 
-    setTodos((prev) => [
-      ...prev,
-      { id: `todo-${Date.now()}`, text: inputText.trim(), completed: false },
-    ]);
+    addTodo(inputText);
     setInputText("");
-  };
-
-  const toggleTodo = (id: string) => {
-    setTodos((prev) =>
-      prev.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo,
-      ),
-    );
-  };
-
-  const deleteTodo = (id: string) => {
-    setTodos((prev) => prev.filter((todo) => todo.id !== id));
   };
 
   const completedCount = todos.filter((t) => t.completed).length;
@@ -44,7 +24,7 @@ export const useTodo = (initialTodos: TodoItemData[] = []) => {
     todos,
     inputText,
     setInputText,
-    addTodo,
+    addTodo: handleAddTodo,
     toggleTodo,
     deleteTodo,
     progressPercent,

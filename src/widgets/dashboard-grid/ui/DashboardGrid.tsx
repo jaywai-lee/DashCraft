@@ -17,8 +17,10 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { SortableWidget } from "./SortableWidget";
+import { useEffect, useState } from "react";
 
 export const DashboardGrid = () => {
+  const [isMounted, setIsMounted] = useState(false);
   const { widgets, updateLayouts } = useDashboardStore();
 
   const sensors = useSensors(
@@ -49,6 +51,18 @@ export const DashboardGrid = () => {
       updateLayouts(updatedLayouts);
     }
   };
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="flex items-center justify-center p-12 text-sm text-muted-foreground">
+        대시보드를 불러오는 중..
+      </div>
+    );
+  }
 
   return (
     <DndContext
