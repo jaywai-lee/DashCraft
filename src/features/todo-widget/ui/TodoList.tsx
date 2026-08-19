@@ -9,7 +9,7 @@ interface TodoListProps {
 
 export const TodoList = ({ todos, onToggle, onDelete }: TodoListProps) => {
   return (
-    <ul className="flex-1 overflow-y-auto space-y-1.5 pr-1 text-sm">
+    <ul className="overflow-y-auto space-y-2 pr-1 max-h-[220px]">
       {todos.map((todo) => (
         <li
           key={todo.id}

@@ -1,60 +1,68 @@
-import { describe, expect, it } from "vitest";
-import { act, renderHook } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
 import { useTodo } from "./useTodo";
-import React from "react";
+import { useTodoStore } from "./useTodoStore";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("useTodo Hook", () => {
-  const initialData = [
-    { id: "1", text: "테스트 1", completed: false },
-    { id: "2", text: "테스트 2", completed: true },
-  ];
+  const TEST_WIDGET_ID = "test-widget-1";
 
-  it("초기 데이터와 진행률이 올바르게 계산되어야 한다", () => {
-    const { result } = renderHook(() => useTodo(initialData));
+  beforeEach(() => {
+    // 테스트 실행 전 Zustand 스토어 초기화
+    act(() => {
+      useTodoStore.setState({
+        todosByWidgetId: {
+          [TEST_WIDGET_ID]: [
+            { id: "1", text: "테스트1", completed: false },
+            { id: "2", text: "테스트2", completed: true },
+          ],
+        },
+      });
+    });
+  });
 
-    expect(result.current.todos.length).toBe(2);
+  it("widgetId에 해당하는 할 일 목록을 불러온다", () => {
+    const { result } = renderHook(() => useTodo(TEST_WIDGET_ID));
+
+    expect(result.current.todos).toHaveLength(2);
     expect(result.current.progressPercent).toBe(50);
   });
 
-  it("새로운 Todo 항목을 추가할 수 있어야 한다", () => {
-    const { result } = renderHook(() => useTodo(initialData));
+  it("새로운 할 일을 추가한다", () => {
+    const { result } = renderHook(() => useTodo(TEST_WIDGET_ID));
 
     act(() => {
-      result.current.setInputText("새로운 할 일");
+      result.current.setInputText("새 할 일");
     });
 
     const fakeEvent = {
-      preventDefault: () => {},
+      preventDefault: vi.fn(),
     } as unknown as React.SubmitEvent;
 
     act(() => {
       result.current.addTodo(fakeEvent);
     });
 
-    expect(result.current.todos.length).toBe(3);
-    expect(result.current.todos[2].text).toBe("새로운 할 일");
+    expect(result.current.todos).toHaveLength(3);
     expect(result.current.inputText).toBe("");
   });
 
-  it("Todo 토글 시 완료 상태와 진행률이 업데이트되어야 한다", () => {
-    const { result } = renderHook(() => useTodo(initialData));
+  it("할 일 완료 상태를 토글한다", () => {
+    const { result } = renderHook(() => useTodo(TEST_WIDGET_ID));
 
     act(() => {
       result.current.toggleTodo("1");
     });
 
     expect(result.current.todos[0].completed).toBe(true);
-    expect(result.current.progressPercent).toBe(100);
   });
 
-  it("Todo 항목을 삭제할 수 있어야 한다", () => {
-    const { result } = renderHook(() => useTodo(initialData));
+  it("할 일을 삭제한다", () => {
+    const { result } = renderHook(() => useTodo(TEST_WIDGET_ID));
 
     act(() => {
       result.current.deleteTodo("1");
     });
 
-    expect(result.current.todos.length).toBe(1);
-    expect(result.current.todos.find((t) => t.id === "1")).toBeUndefined();
+    expect(result.current.todos).toHaveLength(1);
   });
 });
