@@ -12,7 +12,7 @@ export const TodoProgress = ({ percent }: TodoProgressProps) => {
       <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
         <div
           className="bg-primary h-2 transition-all duration-300 ease-in-out"
-          style={{ width: `${percent}` }}
+          style={{ width: `${percent}%` }}
         />
       </div>
     </div>
