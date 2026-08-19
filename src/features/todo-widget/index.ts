@@ -1,2 +1,2 @@
 export { TodoWidget } from "./ui/TodoWidget";
-export type { TodoItemData } from "./model/useTodo";
+export type { TodoItemData } from "./model/types";

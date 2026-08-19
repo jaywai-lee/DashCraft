@@ -1,16 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTodo } from "../model/useTodo";
 import { TodoForm } from "./TodoForm";
 import { TodoList } from "./TodoList";
 import { TodoProgress } from "./TodoProgress";
 
-const DEFAULT_TODOS = [
-  { id: "1", text: "DashCraft 프로젝트 세팅", completed: true },
-  { id: "2", text: "Todo 위젯 기능 구현", completed: false },
-];
-
 export const TodoWidget = () => {
+  const [isMounted, setIsMounted] = useState(false);
   const {
     todos,
     inputText,
@@ -19,7 +16,19 @@ export const TodoWidget = () => {
     toggleTodo,
     deleteTodo,
     progressPercent,
-  } = useTodo(DEFAULT_TODOS);
+  } = useTodo();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
+        불러오는 중..
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full gap-3">
