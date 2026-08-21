@@ -27,10 +27,15 @@ export const SortableWidget = ({ widget }: SortableWidgetProps) => {
     zIndex: isDragging ? 50 : 1,
   };
 
+  const colSpanClass =
+    widget.layout.w === 2 ? "col-span-1 md:col-span-2" : "col-span-1";
+
+  const isExpanded = widget.layout.w === 2;
+
   const renderWidgetContent = () => {
     switch (widget.type) {
       case "todo":
-        return <TodoWidget widgetId={widget.id} />;
+        return <TodoWidget widgetId={widget.id} isExpanded={isExpanded} />;
       default:
         return (
           <div className="text-sm text-muted-foreground">
@@ -46,9 +51,9 @@ export const SortableWidget = ({ widget }: SortableWidgetProps) => {
       style={style}
       {...attributes}
       {...listeners}
-      className="h-fit touch-none"
+      className={`h-fit touch-none select-none ${colSpanClass}`}
     >
-      <WidgetFrame id={widget.id} title={widget.title}>
+      <WidgetFrame id={widget.id} title={widget.title} width={widget.layout.w}>
         {renderWidgetContent()}
       </WidgetFrame>
     </div>

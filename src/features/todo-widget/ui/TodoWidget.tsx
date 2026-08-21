@@ -8,9 +8,13 @@ import { TodoProgress } from "./TodoProgress";
 
 interface TodoWidgetProps {
   widgetId: string;
+  isExpanded?: boolean;
 }
 
-export const TodoWidget = ({ widgetId }: TodoWidgetProps) => {
+export const TodoWidget = ({
+  widgetId,
+  isExpanded = false,
+}: TodoWidgetProps) => {
   const [isMounted, setIsMounted] = useState(false);
   const {
     todos,
@@ -42,7 +46,12 @@ export const TodoWidget = ({ widgetId }: TodoWidgetProps) => {
         onChangeText={setInputText}
         onSubmit={addTodo}
       />
-      <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} />
+      <TodoList
+        todos={todos}
+        onToggle={toggleTodo}
+        onDelete={deleteTodo}
+        isExpanded={isExpanded}
+      />
     </div>
   );
 };

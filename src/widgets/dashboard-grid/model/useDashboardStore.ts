@@ -8,6 +8,7 @@ interface DashboardState {
   removeWidget: (id: string) => void;
   updateLayouts: (layouts: LayoutItem[]) => void;
   setWidgets: (widgets: Widget[]) => void;
+  toggleWidgetWidth: (id: string) => void;
   resetDashboard: () => void;
 }
 
@@ -45,6 +46,19 @@ export const useDashboardStore = create<DashboardState>()(
         })),
 
       setWidgets: (widgets) => set({ widgets }),
+
+      toggleWidgetWidth: (id: string) =>
+        set((state) => ({
+          widgets: state.widgets.map((widget) => {
+            if (widget.id !== id) return widget;
+            const currentW = widget.layout.w || 1;
+            const newW = currentW === 1 ? 2 : 1;
+            return {
+              ...widget,
+              layout: { ...widget.layout, w: newW },
+            };
+          }),
+        })),
 
       resetDashboard: () => set({ widgets: INITIAL_WIDGETS }),
     }),
