@@ -9,6 +9,7 @@ interface DashboardState {
   updateLayouts: (layouts: LayoutItem[]) => void;
   setWidgets: (widgets: Widget[]) => void;
   toggleWidgetWidth: (id: string) => void;
+  updateWidgetTitle: (id: string, title: string) => void;
   resetDashboard: () => void;
 }
 
@@ -60,8 +61,16 @@ export const useDashboardStore = create<DashboardState>()(
           }),
         })),
 
+      updateWidgetTitle: (id: string, title: string) =>
+        set((state) => ({
+          widgets: state.widgets.map((widget) =>
+            widget.id === id ? { ...widget, title } : widget,
+          ),
+        })),
+
       resetDashboard: () => set({ widgets: INITIAL_WIDGETS }),
     }),
+
     {
       name: "dashcraft-storage",
     },
