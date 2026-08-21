@@ -11,6 +11,8 @@ interface TodoState {
   addTodo: (widgetId: string, text: string) => void;
   toggleTodo: (widgetId: string, todoId: string) => void;
   deleteTodo: (widgetId: string, todoId: string) => void;
+  removeWidgetTodos: (widgetId: string) => void;
+  resetAllTodos: () => void;
 }
 
 export const useTodoStore = create<TodoState>()(
@@ -21,7 +23,7 @@ export const useTodoStore = create<TodoState>()(
       },
 
       getTodos: (widgetId: string) => {
-        return get().todosByWidgetId[widgetId] || DEFAULT_TODOS;
+        return get().todosByWidgetId[widgetId] || [];
       },
 
       addTodo: (widgetId: string, text: string) => {
@@ -69,7 +71,22 @@ export const useTodoStore = create<TodoState>()(
           };
         });
       },
+
+      removeWidgetTodos: (widgetId: string) => {
+        set((state) => {
+          const newTodosByWidgetId = { ...state.todosByWidgetId };
+          delete newTodosByWidgetId[widgetId];
+          return { todosByWidgetId: newTodosByWidgetId };
+        });
+      },
+
+      resetAllTodos: () => {
+        set({
+          todosByWidgetId: {},
+        });
+      },
     }),
+
     {
       name: "dashcraft-todo-storage",
       storage: createJSONStorage(() => localStorage),

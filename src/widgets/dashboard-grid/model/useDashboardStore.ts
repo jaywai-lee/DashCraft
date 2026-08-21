@@ -11,14 +11,7 @@ interface DashboardState {
   resetDashboard: () => void;
 }
 
-const INITIAL_WIDGETS: Widget[] = [
-  {
-    id: "default-todo-1",
-    type: "todo",
-    title: "할 일 목록",
-    layout: { id: "default-todo-1", x: 0, y: 0, w: 2, h: 2 },
-  },
-];
+const INITIAL_WIDGETS: Widget[] = [];
 
 export const useDashboardStore = create<DashboardState>()(
   persist(
