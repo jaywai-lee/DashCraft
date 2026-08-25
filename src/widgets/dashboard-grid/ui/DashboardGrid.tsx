@@ -19,10 +19,11 @@ import {
 import { SortableWidget } from "./SortableWidget";
 import { useEffect, useState } from "react";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
+import { LayoutGrid, Plus } from "lucide-react";
 
 export const DashboardGrid = () => {
   const [isMounted, setIsMounted] = useState(false);
-  const { widgets, setWidgets } = useDashboardStore();
+  const { widgets, setWidgets, addWidget } = useDashboardStore();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -55,6 +56,35 @@ export const DashboardGrid = () => {
     return (
       <div className="flex items-center justify-center p-12 text-sm text-muted-foreground">
         대시보드를 불러오는 중..
+      </div>
+    );
+  }
+
+  if (widgets.length === 0) {
+    return (
+      <div className="border-2 border-dashed rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-4 bg-background/50 my-4">
+        <div className="p-3 bg-primary/10 text-primary rounded-xl">
+          <LayoutGrid className="w-8 h-8" />
+        </div>
+        <div className="space-y-1 max-w-sm">
+          <h3 className="font-semibold text-base">배치된 위젯이 없습니다</h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            상단의 &quot;Todo 위젯 추가&quot; 버튼을 눌러 나만의 대시보드를
+            채워보세요.
+          </p>
+        </div>
+        <button
+          onClick={() =>
+            addWidget({
+              type: "todo",
+              title: "할 일 목록",
+              layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
+            })
+          }
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+        >
+          <Plus className="w-4 h-4" />첫 위젯 추가하기
+        </button>
       </div>
     );
   }
