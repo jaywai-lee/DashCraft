@@ -1,3 +1,4 @@
+import { Button } from "@/shared/ui/button";
 import { Plus } from "lucide-react";
 import React from "react";
 
@@ -28,13 +29,15 @@ export const TodoForm = ({
         placeholder="할 일 추가.."
         className="flex-1 px-3 py-1.5 text-sm border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-primary"
       />
-      <button
+      <Button
         type="submit"
-        className="p-1.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity"
+        variant="primary"
+        size="sm"
         aria-label="추가"
+        className="min-w-0 px-2.5"
       >
         <Plus className="w-4 h-4" />
-      </button>
+      </Button>
     </form>
   );
 };
