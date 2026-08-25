@@ -1,5 +1,8 @@
 export type WidgetType = "todo" | "dday" | "quicklink" | "note";
 
+export type WidgetColor =
+  "default" | "blue" | "green" | "yellow" | "purple" | "red";
+
 export interface LayoutItem {
   id: string;
   x: number;
@@ -12,6 +15,7 @@ export interface Widget {
   id: string;
   type: WidgetType;
   title: string;
+  color?: WidgetColor;
   layout: LayoutItem;
   config?: Record<string, unknown>;
 }

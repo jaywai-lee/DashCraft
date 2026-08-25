@@ -1,4 +1,4 @@
-import { LayoutItem, Widget } from "@/entities/widget/model/types";
+import { LayoutItem, Widget, WidgetColor } from "@/entities/widget/model/types";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -10,6 +10,7 @@ interface DashboardState {
   setWidgets: (widgets: Widget[]) => void;
   toggleWidgetWidth: (id: string) => void;
   updateWidgetTitle: (id: string, title: string) => void;
+  updateWidgetColor: (id: string, color: WidgetColor) => void;
   resetDashboard: () => void;
 }
 
@@ -65,6 +66,13 @@ export const useDashboardStore = create<DashboardState>()(
         set((state) => ({
           widgets: state.widgets.map((widget) =>
             widget.id === id ? { ...widget, title } : widget,
+          ),
+        })),
+
+      updateWidgetColor: (id: string, color: WidgetColor) =>
+        set((state) => ({
+          widgets: state.widgets.map((widget) =>
+            widget.id === id ? { ...widget, color } : widget,
           ),
         })),
 
