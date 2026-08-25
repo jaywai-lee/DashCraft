@@ -2,28 +2,81 @@
 
 import { useTodoStore } from "@/features/todo-widget/model/useTodoStore";
 import { useDashboardStore } from "@/widgets/dashboard-grid/model/useDashboardStore";
-import { Check, Edit2, Maximize2, Minimize2, X } from "lucide-react";
+import { Check, Edit2, Maximize2, Minimize2, Palette, X } from "lucide-react";
 import React, { useState } from "react";
+import { WidgetColor } from "../model/types";
+import { cn } from "@/shared/lib/utils";
 
 interface WidgetFrameProps {
   id: string;
   title: string;
+  color?: WidgetColor;
   width?: number;
   children: React.ReactNode;
 }
 
+const COLOR_THEMES: Record<
+  WidgetColor,
+  { label: string; bg: string; border: string; accentBg: string }
+> = {
+  default: {
+    label: "기본",
+    bg: "bg-muted/50",
+    border: "border-border",
+    accentBg: "bg-primary",
+  },
+  blue: {
+    label: "블루",
+    bg: "bg-blue-50/50 dark:bg-blue-950/20",
+    border: "border-blue-200 dark:border-blue-800",
+    accentBg: "bg-blue-500",
+  },
+  green: {
+    label: "그린",
+    bg: "bg-emerald-50/50 dark:bg-emerald-950/20",
+    border: "border-emerald-200 dark:border-emerald-800",
+    accentBg: "bg-emerald-500",
+  },
+  yellow: {
+    label: "옐로우",
+    bg: "bg-amber-50/50 dark:bg-amber-950/20",
+    border: "border-amber-200 dark:border-amber-800",
+    accentBg: "bg-amber-500",
+  },
+  purple: {
+    label: "퍼플",
+    bg: "bg-purple-50/50 dark:bg-purple-950/20",
+    border: "border-purple-200 dark:border-purple-800",
+    accentBg: "bg-purple-500",
+  },
+  red: {
+    label: "레드",
+    bg: "bg-rose-50/50 dark:bg-rose-950/20",
+    border: "border-rose-200 dark:border-rose-800",
+    accentBg: "bg-rose-500",
+  },
+};
+
 export const WidgetFrame = ({
   id,
   title,
+  color = "default",
   width = 1,
   children,
 }: WidgetFrameProps) => {
-  const { removeWidget, toggleWidgetWidth, updateWidgetTitle } =
-    useDashboardStore();
+  const {
+    removeWidget,
+    toggleWidgetWidth,
+    updateWidgetTitle,
+    updateWidgetColor,
+  } = useDashboardStore();
   const { removeWidgetTodos } = useTodoStore();
 
   const [isEditing, setIsEditing] = useState(false);
   const [inputTitle, setInputTitle] = useState(title);
+  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
+
+  const currentTheme = COLOR_THEMES[color] || COLOR_THEMES.default;
 
   const handleStartEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -56,9 +109,26 @@ export const WidgetFrame = ({
     }
   };
 
+  const handleSelectColor = (selectedColor: WidgetColor) => {
+    updateWidgetColor(id, selectedColor);
+    setIsColorPickerOpen(false);
+  };
+
   return (
-    <div className="flex flex-col h-full bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden min-h-[180px]">
-      <div className="flex items-center justify-between px-4 py-2.5 bg-muted/50 border-b cursor-grab active:cursor-grabbing select-none h-11">
+    <div
+      className={cn(
+        "relative flex flex-col h-full bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden min-h-[180px] transition-colors duration-200",
+        currentTheme.border,
+      )}
+    >
+      <div className={cn("h-1 w-full shrink-0", currentTheme.accentBg)} />
+
+      <div
+        className={cn(
+          "flex items-center justify-between px-4 py-2 bg-muted/50 border-b cursor-grab active:cursor-grabbing select-none h-11 transition-colors",
+          currentTheme,
+        )}
+      >
         <div className="flex items-center gap-1.5 flex-1 mr-2 overflow-hidden">
           {isEditing ? (
             <div
@@ -103,9 +173,36 @@ export const WidgetFrame = ({
         </div>
 
         <div
-          className="flex items-center gap-1 shrink-0"
+          className="relative flex items-center gap-1 shrink-0"
           onPointerDown={(e) => e.stopPropagation()}
         >
+          <button
+            onClick={() => setIsColorPickerOpen((prev) => !prev)}
+            className="p-1 hover:bg-accent rounded-md text-muted-foreground hover:text-foreground transition-colors"
+            title="위젯 색상 변경"
+          >
+            <Palette className="w-3.5 h-3.5" />
+          </button>
+
+          {isColorPickerOpen && (
+            <div className="absolute top-8 right-0 z-50 p-2 bg-background border rounded-xl shadow-xl flex items-center gap-1.5 animate-in zoom-in-95 duration-150">
+              {(Object.keys(COLOR_THEMES) as WidgetColor[]).map((themeKey) => (
+                <button
+                  key={themeKey}
+                  onClick={() => handleSelectColor(themeKey)}
+                  className={cn(
+                    "w-5 h-5 rounded-full border transition-transform hover:scale-110 flex items-center justify-center",
+                    COLOR_THEMES[themeKey].accentBg,
+                    color === themeKey
+                      ? "ring-2 ring-primary ring-offset-1 scale-110"
+                      : "",
+                  )}
+                  title={COLOR_THEMES[themeKey].label}
+                />
+              ))}
+            </div>
+          )}
+
           <button
             onClick={() => toggleWidgetWidth(id)}
             className="p-1 hover:bg-accent rounded-md text-muted-foreground hover:text-foreground transition-colors"

@@ -53,7 +53,12 @@ export const SortableWidget = ({ widget }: SortableWidgetProps) => {
       {...listeners}
       className={`h-fit touch-none select-none ${colSpanClass}`}
     >
-      <WidgetFrame id={widget.id} title={widget.title} width={widget.layout.w}>
+      <WidgetFrame
+        id={widget.id}
+        title={widget.title}
+        color={widget.color}
+        width={widget.layout.w}
+      >
         {renderWidgetContent()}
       </WidgetFrame>
     </div>
