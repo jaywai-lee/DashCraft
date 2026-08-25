@@ -20,6 +20,7 @@ import { SortableWidget } from "./SortableWidget";
 import { useEffect, useState } from "react";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { LayoutGrid, Plus } from "lucide-react";
+import { Button } from "@/shared/ui/button";
 
 export const DashboardGrid = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -73,7 +74,9 @@ export const DashboardGrid = () => {
             채워보세요.
           </p>
         </div>
-        <button
+        <Button
+          variant="primary"
+          size="md"
           onClick={() =>
             addWidget({
               type: "todo",
@@ -81,10 +84,9 @@ export const DashboardGrid = () => {
               layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
             })
           }
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity shadow-sm"
         >
           <Plus className="w-4 h-4" />첫 위젯 추가하기
-        </button>
+        </Button>
       </div>
     );
   }

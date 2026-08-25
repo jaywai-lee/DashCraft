@@ -1,5 +1,7 @@
 import { CheckCircle2, Circle, Trash2 } from "lucide-react";
 import { TodoItemData } from "../model/types";
+import { cn } from "@/shared/lib/utils";
+import { Button } from "@/shared/ui/button";
 
 interface TodoListProps {
   todos: TodoItemData[];
@@ -17,7 +19,10 @@ export const TodoList = ({
   if (todos.length === 0) {
     return (
       <div
-        className={`flex-1 flex items-center justify-center py-6 text-xs text-muted-foreground ${isExpanded ? "min-h-[300px]" : "min-h-[120px]"}`}
+        className={cn(
+          "flex-1 flex items-center justify-center py-6 text-xs text-muted-foreground",
+          isExpanded ? "min-h-[300px]" : "min-h-[120px]",
+        )}
       >
         등록된 할 일이 없습니다.
       </div>
@@ -25,11 +30,12 @@ export const TodoList = ({
   }
   return (
     <ul
-      className={`space-y-2 overflow-y-auto pr-1 flex-1 transition-all ${
+      className={cn(
+        "space-y-2 overflow-y-auto pr-1 flex-1 transition-all",
         isExpanded
           ? "max-h-[480px] min-h-[300px]"
-          : "max-h-[220px] min-h-[120px]"
-      }`}
+          : "max-h-[220px] min-h-[120px]",
+      )}
     >
       {todos.map((todo) => (
         <li
@@ -51,13 +57,15 @@ export const TodoList = ({
               {todo.text}
             </span>
           </button>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => onDelete(todo.id)}
-            className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive transition-all"
+            className="opacity-0 group-hover:opacity-100 h-7 w-7 p-0 min-w-0 text-muted-foreground hover:text-destructive shrink-0"
             aria-label="삭제"
           >
             <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </li>
       ))}
     </ul>
