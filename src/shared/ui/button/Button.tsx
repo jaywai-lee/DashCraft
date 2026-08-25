@@ -23,10 +23,11 @@ export const Button = ({
 }: ButtonProps) => {
   const variantStyles = {
     primary: "bg-primary text-primary-foreground hover:opacity-90 shadow-2xs",
-    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+    secondary:
+      "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
     outline:
       "border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-2xs",
-    ghost: "hover:bg-accent hover:text-accent-foreground",
+    ghost: "bg-transparent hover:bg-accent hover:text-accent-foreground",
     danger:
       "bg-destructive text-destructive-foreground hover:opacity-90 shadow-2xs",
   };
