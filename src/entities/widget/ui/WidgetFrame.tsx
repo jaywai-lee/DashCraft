@@ -42,7 +42,8 @@ export const WidgetFrame = ({
   return (
     <div
       className={cn(
-        "relative flex flex-col h-full bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden min-h-[180px] transition-colors duration-200",
+        "relative flex flex-col w-full bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden transition-all duration-200",
+        width === 2 ? "h-[280px] md:h-[580px] md:row-span-2" : "h-[280px]",
         currentTheme.border,
       )}
     >
