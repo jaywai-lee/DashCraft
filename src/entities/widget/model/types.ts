@@ -1,4 +1,4 @@
-export type WidgetType = "todo" | "dday" | "quicklink" | "note";
+export type WidgetType = "todo" | "dday" | "quicklink" | "note" | "clock";
 
 export type WidgetColor =
   "default" | "blue" | "green" | "yellow" | "purple" | "red";

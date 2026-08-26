@@ -5,7 +5,7 @@ import { Button } from "@/shared/ui/button";
 import { Modal } from "@/shared/ui/modal";
 import { useDashboardStore } from "@/widgets/dashboard-grid/model/useDashboardStore";
 import { DashboardGrid } from "@/widgets/dashboard-grid/ui/DashboardGrid";
-import { CheckSquare, LayoutGrid, Plus, RotateCcw } from "lucide-react";
+import { CheckSquare, Clock, LayoutGrid, Plus, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -18,6 +18,14 @@ export default function DashboardPage() {
     addWidget({
       type: "todo",
       title: "할 일 목록",
+      layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
+    });
+  };
+
+  const handleAddClockWidget = () => {
+    addWidget({
+      type: "clock",
+      title: "시계 & 타이머",
       layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
     });
   };
@@ -52,6 +60,11 @@ export default function DashboardPage() {
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">초기화</span>
+          </Button>
+
+          <Button variant="outline" size="md" onClick={handleAddClockWidget}>
+            <Clock className="w-4 h-4 text-primary" />
+            <span>시계 추가</span>
           </Button>
 
           <Button variant="primary" size="md" onClick={handleAddTodoWidget}>
