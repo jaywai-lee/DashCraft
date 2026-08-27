@@ -16,6 +16,7 @@ import {
   CheckSquare,
   ChevronDown,
   Clock,
+  FileText,
   LayoutGrid,
   ListTodo,
   Plus,
@@ -29,11 +30,12 @@ export default function DashboardPage() {
   const { resetAllTodos } = useTodoStore();
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
-  const handleAddWidget = (type: "todo" | "clock" | "dday") => {
+  const handleAddWidget = (type: "todo" | "clock" | "dday" | "memo") => {
     const widgetConfig = {
       todo: { title: "할 일 목록", type: "todo" as const },
       clock: { title: "시계 & 타이머", type: "clock" as const },
       dday: { title: "D-Day 카운트다운", type: "dday" as const },
+      memo: { title: "메모", type: "memo" as const },
     }[type];
 
     addWidget({
@@ -94,6 +96,10 @@ export default function DashboardPage() {
               <DropdownItem onClick={() => handleAddWidget("dday")}>
                 <Calendar className="w-4 h-4 text-primary" />
                 <span>D-Day</span>
+              </DropdownItem>
+              <DropdownItem onClick={() => handleAddWidget("memo")}>
+                <FileText className="w-4 h-4 text-primary" />
+                <span>메모</span>
               </DropdownItem>
             </DropdownContent>
           </Dropdown>
