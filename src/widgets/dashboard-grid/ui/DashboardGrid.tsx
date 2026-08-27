@@ -17,7 +17,7 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { SortableWidget } from "./SortableWidget";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { LayoutGrid, Plus } from "lucide-react";
 import { Button } from "@/shared/ui/button";
@@ -26,16 +26,15 @@ export const DashboardGrid = () => {
   const [isMounted, setIsMounted] = useState(false);
   const { widgets, setWidgets, addWidget } = useDashboardStore();
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
+  const pointerSensor = useSensor(PointerSensor, {
+    activationConstraint: { distance: 5 },
+  });
+  const keyboardSensor = useSensor(KeyboardSensor, {
+    coordinateGetter: sortableKeyboardCoordinates,
+  });
+  const sensors = useSensors(pointerSensor, keyboardSensor);
+
+  const widgetIds = useMemo(() => widgets.map((w) => w.id), [widgets]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -98,10 +97,7 @@ export const DashboardGrid = () => {
       onDragEnd={handleDragEnd}
       modifiers={[restrictToWindowEdges]}
     >
-      <SortableContext
-        items={widgets.map((w) => w.id)}
-        strategy={rectSortingStrategy}
-      >
+      <SortableContext items={widgetIds} strategy={rectSortingStrategy}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
           {widgets.map((widget) => (
             <SortableWidget key={widget.id} widget={widget} />
