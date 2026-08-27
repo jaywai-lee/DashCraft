@@ -93,13 +93,18 @@ export const DropdownContent = ({
   className?: string;
 }) => {
   const { isOpen } = useDropdown();
+  const [mounted, setMounted] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
 
   return (
     <div
       className={cn(
-        "absolute mt-2 w-48 rounded-xl border bg-popover p-1 text-popover-foreground shadow-lg ring-1 ring-black/5 z-50 animate-in fade-in-80 zoom-in-95",
+        "absolute top-full mt-2 w-48 rounded-xl border bg-background p-1 text-popover-foreground shadow-xl ring-1 ring-black/5 z-50 animate-in fade-in-80 zoom-in-95",
         align === "right" ? "right-0" : "left-0",
         className,
       )}
