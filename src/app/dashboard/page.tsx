@@ -2,14 +2,22 @@
 
 import { useTodoStore } from "@/features/todo-widget/model/useTodoStore";
 import { Button } from "@/shared/ui/button";
+import {
+  Dropdown,
+  DropdownContent,
+  DropdownItem,
+  DropdownTrigger,
+} from "@/shared/ui/dropdown/Dropdown";
 import { Modal } from "@/shared/ui/modal";
 import { useDashboardStore } from "@/widgets/dashboard-grid/model/useDashboardStore";
 import { DashboardGrid } from "@/widgets/dashboard-grid/ui/DashboardGrid";
 import {
   Calendar,
   CheckSquare,
+  ChevronDown,
   Clock,
   LayoutGrid,
+  ListTodo,
   Plus,
   RotateCcw,
 } from "lucide-react";
@@ -21,26 +29,16 @@ export default function DashboardPage() {
   const { resetAllTodos } = useTodoStore();
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
-  const handleAddTodoWidget = () => {
-    addWidget({
-      type: "todo",
-      title: "할 일 목록",
-      layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
-    });
-  };
+  const handleAddWidget = (type: "todo" | "clock" | "dday") => {
+    const widgetConfig = {
+      todo: { title: "할 일 목록", type: "todo" as const },
+      clock: { title: "시계 & 타이머", type: "clock" as const },
+      dday: { title: "D-Day 카운트다운", type: "dday" as const },
+    }[type];
 
-  const handleAddClockWidget = () => {
     addWidget({
-      type: "clock",
-      title: "시계 & 타이머",
-      layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
-    });
-  };
-
-  const handleAddDDayWidget = () => {
-    addWidget({
-      type: "dday",
-      title: "D-Day 카운트다운",
+      type: widgetConfig.type,
+      title: widgetConfig.title,
       layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
     });
   };
@@ -53,77 +51,68 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-muted/20 text-foreground flex flex-col">
-      <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-6 py-2 sm:py-0 sm:h-16 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-0">
-        <div className="flex items-center justify-center w-full sm:w-auto">
-          <Link
-            href="/"
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          >
-            <div className="p-1.5 bg-primary text-primary-foreground rounded-lg">
-              <LayoutGrid className="w-5 h-5" />
-            </div>
-            <span className="font-bold text-lg tracking-tight">DashCraft</span>
-          </Link>
-        </div>
+      <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-6 h-16 flex items-center justify-between">
+        <Link
+          href="/"
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
+          <div className="p-1.5 bg-primary text-primary-foreground rounded-lg">
+            <LayoutGrid className="w-5 h-5" />
+          </div>
+          <span className="font-bold text-lg tracking-tight">DashCraft</span>
+        </Link>
 
-        <div className="grid grid-cols-4 sm:flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            size="sm"
+            size="md"
             onClick={() => setIsResetModalOpen(true)}
             title="대시보드 초기화"
-            className="w-full sm:w-auto px-2 justify-center"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">초기화</span>
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAddClockWidget}
-            className="w-full sm:w-auto px-2 justify-center"
-          >
-            <Clock className="w-4 h-4 text-primary" />
-            <span className="hidden md:inline">시계 추가</span>
-          </Button>
+          <Dropdown>
+            <DropdownTrigger>
+              <Button variant="primary" size="md" className="gap-1.5">
+                <Plus className="w-4 h-4" />
+                <span>위젯 추가</span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </Button>
+            </DropdownTrigger>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAddDDayWidget}
-            className="w-full sm:w-auto px-2 justify-center"
-          >
-            <Calendar className="w-4 h-4 text-primary" />
-            <span className="hidden md:inline">D-Day 추가</span>
-          </Button>
-
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleAddTodoWidget}
-            className="w-full sm:w-auto px-2 justify-center"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden md:inline">위젯 추가</span>
-          </Button>
+            <DropdownContent align="right">
+              <DropdownItem onClick={() => handleAddWidget("todo")}>
+                <ListTodo className="w-4 h-4 text-primary" />
+                <span>할 일 목록</span>
+              </DropdownItem>
+              <DropdownItem onClick={() => handleAddWidget("clock")}>
+                <Clock className="w-4 h-4 text-primary" />
+                <span>시계 & 뽀모도로</span>
+              </DropdownItem>
+              <DropdownItem onClick={() => handleAddWidget("dday")}>
+                <Calendar className="w-4 h-4 text-primary" />
+                <span>D-Day</span>
+              </DropdownItem>
+            </DropdownContent>
+          </Dropdown>
         </div>
       </header>
 
-      {/* 메인 영역 */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 px-1">
-          <div className="space-y-0.5">
-            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-extrabold tracking-tight">
               내 워크스페이스
             </h1>
-            <p className="text-[11px] sm:text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               위젯을 자유롭게 드래그하여 배치하고, 크기와 이름을 변경해보세요.
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background border px-2.5 py-1 rounded-lg w-fit shadow-2xs">
-            <CheckSquare className="w-3.5 h-3.5 text-primary" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-background border px-3 py-1.5 rounded-lg w-fit shadow-2xs">
+            <CheckSquare className="w-4 h-4 text-primary" />
             <span>
               활성 위젯{" "}
               <strong className="text-foreground font-semibold">
