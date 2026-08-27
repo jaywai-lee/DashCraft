@@ -98,7 +98,7 @@ export const DashboardGrid = () => {
       modifiers={[restrictToWindowEdges]}
     >
       <SortableContext items={widgetIds} strategy={rectSortingStrategy}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 items-start w-full">
           {widgets.map((widget) => (
             <SortableWidget key={widget.id} widget={widget} />
           ))}
