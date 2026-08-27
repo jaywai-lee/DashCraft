@@ -106,7 +106,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      <main className="flex-1 max-w-[1800px] w-full mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
           <div className="space-y-1">
             <h1 className="text-2xl font-extrabold tracking-tight">
