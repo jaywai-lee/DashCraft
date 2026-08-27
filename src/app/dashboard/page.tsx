@@ -5,7 +5,14 @@ import { Button } from "@/shared/ui/button";
 import { Modal } from "@/shared/ui/modal";
 import { useDashboardStore } from "@/widgets/dashboard-grid/model/useDashboardStore";
 import { DashboardGrid } from "@/widgets/dashboard-grid/ui/DashboardGrid";
-import { CheckSquare, Clock, LayoutGrid, Plus, RotateCcw } from "lucide-react";
+import {
+  Calendar,
+  CheckSquare,
+  Clock,
+  LayoutGrid,
+  Plus,
+  RotateCcw,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -26,6 +33,14 @@ export default function DashboardPage() {
     addWidget({
       type: "clock",
       title: "시계 & 타이머",
+      layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
+    });
+  };
+
+  const handleAddDDayWidget = () => {
+    addWidget({
+      type: "dday",
+      title: "D-Day 카운트다운",
       layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
     });
   };
@@ -64,12 +79,17 @@ export default function DashboardPage() {
 
           <Button variant="outline" size="md" onClick={handleAddClockWidget}>
             <Clock className="w-4 h-4 text-primary" />
-            <span>시계 추가</span>
+            <span className="hidden md:inline">시계 추가</span>
+          </Button>
+
+          <Button variant="outline" size="md" onClick={handleAddDDayWidget}>
+            <Calendar className="w-4 h-4 text-primary" />
+            <span className="hidden md:inline">D-Day 추가</span>
           </Button>
 
           <Button variant="primary" size="md" onClick={handleAddTodoWidget}>
             <Plus className="w-4 h-4" />
-            <span>위젯 추가</span>
+            <span className="hidden md:inline">위젯 추가</span>
           </Button>
         </div>
       </header>

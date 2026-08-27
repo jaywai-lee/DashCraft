@@ -26,3 +26,24 @@ export const formatDateParts = (date: Date) => {
     dayOfWeek: `${dayOfWeek}요일`, // "수요일"
   };
 };
+
+export const calculateDDay = (targetDateStr: string): number => {
+  if (!targetDateStr) return 0;
+
+  const target = new Date(targetDateStr);
+  const today = new Date();
+
+  target.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+
+  const diffTime = target.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  return diffDays;
+};
+
+export const formatDDayText = (diffDays: number): string => {
+  if (diffDays === 0) return "D-Day";
+  if (diffDays > 0) return `D-${diffDays}`;
+  return `D+${Math.abs(diffDays)}`;
+};
