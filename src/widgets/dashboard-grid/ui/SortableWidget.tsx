@@ -3,6 +3,7 @@
 import { Widget } from "@/entities/widget/model/types";
 import { WidgetFrame } from "@/entities/widget/ui/WidgetFrame";
 import { ClockWidget } from "@/features/clock-widget/ui/ClockWidget";
+import { DDayWidget } from "@/features/dday-widget/ui/DDayWidget";
 import { TodoWidget } from "@/features/todo-widget";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -41,6 +42,8 @@ export const SortableWidget = ({ widget }: SortableWidgetProps) => {
         return <TodoWidget widgetId={widget.id} isExpanded={isExpanded} />;
       case "clock":
         return <ClockWidget widgetId={widget.id} isExpanded={isExpanded} />;
+      case "dday":
+        return <DDayWidget widgetId={widget.id} isExpanded={isExpanded} />;
       default:
         return <div>알 수 없는 위젯 타입입니다.</div>;
     }
