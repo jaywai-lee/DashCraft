@@ -8,7 +8,7 @@ export const COLOR_THEMES: Record<
     label: "기본",
     bg: "bg-muted/50",
     border: "border-border",
-    accentBg: "bg-primary",
+    accentBg: "bg-slate-400 dark:bg-slate-500",
   },
   blue: {
     label: "블루",

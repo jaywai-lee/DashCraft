@@ -10,6 +10,7 @@ import {
   DropdownTrigger,
 } from "@/shared/ui/dropdown/Dropdown";
 import { Modal } from "@/shared/ui/modal";
+import { ThemeToggle } from "@/shared/ui/theme-toggle/ThemeToggle";
 import {
   WIDGET_CONFIG_MAP,
   WIDGET_OPTIONS,
@@ -65,6 +66,7 @@ export default function DashboardPage() {
         </Link>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Button
             variant="outline"
             size="md"
