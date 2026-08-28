@@ -37,22 +37,26 @@ export const WidgetColorPicker = ({
       </Button>
 
       {isOpen && (
-        <div className="absolute top-8 right-0 z-50 p-2 bg-background border rounded-xl shadow-xl flex items-center gap-1.5 animate-in zoom-in-95 duration-150">
-          {(Object.keys(COLOR_THEMES) as WidgetColor[]).map((themeKey) => (
-            <button
-              key={themeKey}
-              type="button"
-              onClick={() => handleSelect(themeKey)}
-              className={cn(
-                "w-5 h-5 rounded-full border transition-transform hover:scale-110 flex items-center justify-center",
-                COLOR_THEMES[themeKey].accentBg,
-                color === themeKey
-                  ? "ring-2 ring-primary ring-offset-1 scale-110"
-                  : "",
-              )}
-              title={COLOR_THEMES[themeKey].label}
-            />
-          ))}
+        <div className="absolute top-8 right-0 z-50 p-2 bg-popover text-popover-foreground border rounded-xl shadow-xl flex items-center gap-1.5 animate-in zoom-in-95 duration-150">
+          {(Object.keys(COLOR_THEMES) as WidgetColor[]).map((themeKey) => {
+            const isSelected = color === themeKey;
+
+            return (
+              <button
+                key={themeKey}
+                type="button"
+                onClick={() => handleSelect(themeKey)}
+                className={cn(
+                  "w-5 h-5 rounded-full border border-black/10 dark:border-white/10 transition-transform hover:scale-110 flex items-center justify-center shrink-0",
+                  COLOR_THEMES[themeKey].accentBg,
+                  isSelected
+                    ? "ring-2 ring-foreground ring-offset-2 ring-offset-popover scale-110"
+                    : "opacity-80 hover:opacity-100",
+                )}
+                title={COLOR_THEMES[themeKey].label}
+              />
+            );
+          })}
         </div>
       )}
     </div>
