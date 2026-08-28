@@ -19,8 +19,19 @@ import {
 import { SortableWidget } from "./SortableWidget";
 import { useEffect, useMemo, useState } from "react";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
-import { LayoutGrid, Plus } from "lucide-react";
+import { ChevronDown, LayoutGrid, Plus } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import {
+  Dropdown,
+  DropdownContent,
+  DropdownItem,
+  DropdownTrigger,
+} from "@/shared/ui/dropdown/Dropdown";
+import {
+  WIDGET_CONFIG_MAP,
+  WIDGET_OPTIONS,
+  WidgetType,
+} from "../config/widgets.config";
 
 export const DashboardGrid = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -48,6 +59,17 @@ export const DashboardGrid = () => {
     }
   };
 
+  const handleAddWidget = (type: WidgetType) => {
+    const config = WIDGET_CONFIG_MAP[type];
+    if (!config) return;
+
+    addWidget({
+      type: config.type,
+      title: config.title,
+      layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
+    });
+  };
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -69,23 +91,35 @@ export const DashboardGrid = () => {
         <div className="space-y-1 max-w-sm">
           <h3 className="font-semibold text-base">배치된 위젯이 없습니다</h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            상단의 &quot;Todo 위젯 추가&quot; 버튼을 눌러 나만의 대시보드를
-            채워보세요.
+            상단의 &quot;위젯 추가&quot; 메뉴 또는 아래 버튼을 눌러 나만의
+            대시보드를 채워보세요.
           </p>
         </div>
-        <Button
-          variant="primary"
-          size="md"
-          onClick={() =>
-            addWidget({
-              type: "todo",
-              title: "할 일 목록",
-              layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
-            })
-          }
-        >
-          <Plus className="w-4 h-4" />첫 위젯 추가하기
-        </Button>
+
+        <Dropdown>
+          <DropdownTrigger>
+            <Button variant="primary" size="md" className="gap-1.5">
+              <Plus className="w-4 h-4" />
+              <span>첫 위젯 추가하기</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </Button>
+          </DropdownTrigger>
+
+          <DropdownContent align="left">
+            {WIDGET_OPTIONS.map((item) => {
+              const Icon = item.icon;
+              return (
+                <DropdownItem
+                  key={item.type}
+                  onClick={() => handleAddWidget(item.type)}
+                >
+                  <Icon className="w-4 h-4 text-primary" />
+                  <span>{item.title}</span>
+                </DropdownItem>
+              );
+            })}
+          </DropdownContent>
+        </Dropdown>
       </div>
     );
   }

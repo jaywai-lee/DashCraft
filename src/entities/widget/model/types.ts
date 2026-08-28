@@ -1,4 +1,4 @@
-export type WidgetType = "todo" | "dday" | "quicklink" | "memo" | "clock";
+import { WidgetType } from "@/widgets/dashboard-grid/config/widgets.config";
 
 export type WidgetColor =
   "default" | "blue" | "green" | "yellow" | "purple" | "red";

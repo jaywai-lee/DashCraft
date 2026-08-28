@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemoStore } from "@/features/memo-widget/model/useMemoStore";
 import { useTodoStore } from "@/features/todo-widget/model/useTodoStore";
 import { Button } from "@/shared/ui/button";
 import {
@@ -9,16 +10,17 @@ import {
   DropdownTrigger,
 } from "@/shared/ui/dropdown/Dropdown";
 import { Modal } from "@/shared/ui/modal";
+import {
+  WIDGET_CONFIG_MAP,
+  WIDGET_OPTIONS,
+  WidgetType,
+} from "@/widgets/dashboard-grid/config/widgets.config";
 import { useDashboardStore } from "@/widgets/dashboard-grid/model/useDashboardStore";
 import { DashboardGrid } from "@/widgets/dashboard-grid/ui/DashboardGrid";
 import {
-  Calendar,
   CheckSquare,
   ChevronDown,
-  Clock,
-  FileText,
   LayoutGrid,
-  ListTodo,
   Plus,
   RotateCcw,
 } from "lucide-react";
@@ -28,19 +30,16 @@ import { useState } from "react";
 export default function DashboardPage() {
   const { widgets, addWidget, resetDashboard } = useDashboardStore();
   const { resetAllTodos } = useTodoStore();
+  const { resetAllMemos } = useMemoStore();
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
-  const handleAddWidget = (type: "todo" | "clock" | "dday" | "memo") => {
-    const widgetConfig = {
-      todo: { title: "할 일 목록", type: "todo" as const },
-      clock: { title: "시계 & 타이머", type: "clock" as const },
-      dday: { title: "D-Day 카운트다운", type: "dday" as const },
-      memo: { title: "메모", type: "memo" as const },
-    }[type];
+  const handleAddWidget = (type: WidgetType) => {
+    const config = WIDGET_CONFIG_MAP[type];
+    if (!config) return;
 
     addWidget({
-      type: widgetConfig.type,
-      title: widgetConfig.title,
+      type: config.type,
+      title: config.title,
       layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
     });
   };
@@ -48,6 +47,7 @@ export default function DashboardPage() {
   const handleConfirmReset = () => {
     resetDashboard();
     resetAllTodos();
+    resetAllMemos();
     setIsResetModalOpen(false);
   };
 
@@ -85,22 +85,18 @@ export default function DashboardPage() {
             </DropdownTrigger>
 
             <DropdownContent align="right">
-              <DropdownItem onClick={() => handleAddWidget("todo")}>
-                <ListTodo className="w-4 h-4 text-primary" />
-                <span>할 일 목록</span>
-              </DropdownItem>
-              <DropdownItem onClick={() => handleAddWidget("clock")}>
-                <Clock className="w-4 h-4 text-primary" />
-                <span>시계 & 뽀모도로</span>
-              </DropdownItem>
-              <DropdownItem onClick={() => handleAddWidget("dday")}>
-                <Calendar className="w-4 h-4 text-primary" />
-                <span>D-Day</span>
-              </DropdownItem>
-              <DropdownItem onClick={() => handleAddWidget("memo")}>
-                <FileText className="w-4 h-4 text-primary" />
-                <span>메모</span>
-              </DropdownItem>
+              {WIDGET_OPTIONS.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <DropdownItem
+                    key={item.type}
+                    onClick={() => handleAddWidget(item.type)}
+                  >
+                    <Icon className="w-4 h-4 text-primary" />
+                    <span>{item.title}</span>
+                  </DropdownItem>
+                );
+              })}
             </DropdownContent>
           </Dropdown>
         </div>
