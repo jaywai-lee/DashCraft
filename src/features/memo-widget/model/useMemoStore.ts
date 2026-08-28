@@ -11,6 +11,7 @@ interface MemoState {
   memos: Record<string, MemoData>;
   updateMemo: (widgetId: string, content: string) => void;
   deleteMemo: (widgetId: string) => void;
+  resetAllMemos: () => void;
 }
 
 export const useMemoStore = create<MemoState>()(
@@ -35,6 +36,7 @@ export const useMemoStore = create<MemoState>()(
           delete next[widgetId];
           return { memos: next };
         }),
+      resetAllMemos: () => set({ memos: {} }),
     }),
 
     { name: "dashcraft-memo-storage" },
