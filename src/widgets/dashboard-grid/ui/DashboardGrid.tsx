@@ -19,7 +19,7 @@ import {
 import { SortableWidget } from "./SortableWidget";
 import { useEffect, useMemo, useState } from "react";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
-import { ChevronDown, LayoutGrid, Plus } from "lucide-react";
+import { ChevronDown, LayoutGrid, Plus, SearchX } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import {
   Dropdown,
@@ -32,10 +32,14 @@ import {
   WIDGET_OPTIONS,
   WidgetType,
 } from "../config/widgets.config";
+import { useFilterStore } from "@/features/dashboard-filter/model/useFilterStore";
+import { useFilteredWidgets } from "../model/useFilteredWidgets";
 
 export const DashboardGrid = () => {
   const [isMounted, setIsMounted] = useState(false);
-  const { widgets, setWidgets, addWidget } = useDashboardStore();
+  const { setWidgets, addWidget } = useDashboardStore();
+  const { resetFilter } = useFilterStore();
+  const { widgets, filteredWidgets } = useFilteredWidgets();
 
   const pointerSensor = useSensor(PointerSensor, {
     activationConstraint: { distance: 5 },
@@ -45,7 +49,10 @@ export const DashboardGrid = () => {
   });
   const sensors = useSensors(pointerSensor, keyboardSensor);
 
-  const widgetIds = useMemo(() => widgets.map((w) => w.id), [widgets]);
+  const widgetIds = useMemo(
+    () => filteredWidgets.map((w) => w.id),
+    [filteredWidgets],
+  );
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -124,6 +131,25 @@ export const DashboardGrid = () => {
     );
   }
 
+  if (filteredWidgets.length === 0) {
+    return (
+      <div className="border-2 border-dashed rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-4 bg-background/30 my-4">
+        <div className="p-3 bg-muted text-muted-foreground rounded-xl">
+          <SearchX className="w-8 h-8" />
+        </div>
+        <div className="space-y-1 max-w-sm">
+          <h3 className="font-semibold text-base">검색 결과가 없습니다</h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            필터 조건이나 검색어를 변경하여 다시 검색해보세요
+          </p>
+        </div>
+        <Button variant="outline" size="md" onClick={resetFilter}>
+          필터 조건 초기화
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -133,7 +159,7 @@ export const DashboardGrid = () => {
     >
       <SortableContext items={widgetIds} strategy={rectSortingStrategy}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 items-start w-full">
-          {widgets.map((widget) => (
+          {filteredWidgets.map((widget) => (
             <SortableWidget key={widget.id} widget={widget} />
           ))}
         </div>
