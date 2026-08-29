@@ -1,5 +1,7 @@
 "use client";
 
+import { useFilterStore } from "@/features/dashboard-filter/model/useFilterStore";
+import { DashboardFilterBar } from "@/features/dashboard-filter/ui/DashboardFilterBar";
 import { useMemoStore } from "@/features/memo-widget/model/useMemoStore";
 import { useTodoStore } from "@/features/todo-widget/model/useTodoStore";
 import { Button } from "@/shared/ui/button";
@@ -24,15 +26,20 @@ import {
   LayoutGrid,
   Plus,
   RotateCcw,
+  Search,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 export default function DashboardPage() {
   const { widgets, addWidget, resetDashboard } = useDashboardStore();
+  const { toggleFilter, isOpen, searchQuery, selectedWidgetType, todoStatus } =
+    useFilterStore();
   const { resetAllTodos } = useTodoStore();
   const { resetAllMemos } = useMemoStore();
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const isFilterActive =
+    searchQuery !== "" || selectedWidgetType !== "all" || todoStatus !== "all";
 
   const handleAddWidget = (type: WidgetType) => {
     const config = WIDGET_CONFIG_MAP[type];
@@ -66,6 +73,19 @@ export default function DashboardPage() {
         </Link>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant={isOpen ? "primary" : "outline"}
+            size="md"
+            onClick={toggleFilter}
+            className="relative gap-1.5"
+            title="검색 및 필터"
+          >
+            <Search className="w-4 h-4" />
+            <span className="hidden sm:inline">검색 & 필터</span>
+            {isFilterActive && (
+              <span className="w-2 h-2 rounded-full bg-primary absolute -top-0.5 -right-0.5 ring-2 ring-background" />
+            )}
+          </Button>
           <ThemeToggle />
           <Button
             variant="outline"
@@ -103,6 +123,8 @@ export default function DashboardPage() {
           </Dropdown>
         </div>
       </header>
+
+      <DashboardFilterBar />
 
       <main className="flex-1 max-w-[1800px] w-full mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
