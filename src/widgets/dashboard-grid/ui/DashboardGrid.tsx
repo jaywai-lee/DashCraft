@@ -5,6 +5,7 @@ import {
   DndContext,
   DragEndEvent,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -43,7 +44,14 @@ export const DashboardGrid = () => {
     activationConstraint: { distance: 8 },
   });
 
-  const sensors = useSensors(pointerSensor);
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: {
+      delay: 250,
+      tolerance: 5,
+    },
+  });
+
+  const sensors = useSensors(pointerSensor, touchSensor);
 
   const widgetIds = useMemo(
     () => filteredWidgets.map((w) => w.id),
