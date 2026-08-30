@@ -62,7 +62,7 @@ export const WidgetFrame = ({
         {...dragHandleProps?.attributes}
         {...dragHandleProps?.listeners}
         className={cn(
-          "flex items-center justify-between px-4 py-2 bg-muted/50 border-b cursor-grab active:cursor-grabbing select-none h-11 transition-colors",
+          "flex items-center justify-between px-4 py-2 bg-muted/50 border-b cursor-grab active:cursor-grabbing select-none h-11 transition-colors touch-pan-y",
           currentTheme.bg,
         )}
       >
