@@ -17,13 +17,13 @@ export const TodoStatusFilterGroup = ({
   onSelect,
 }: TodoStatusFilterGroupProps) => {
   return (
-    <div className="flex items-center bg-muted/50 p-1 rounded-lg text-xs border gap-1">
+    <div className="flex items-center bg-muted/50 p-1 rounded-lg text-xs border gap-1 shrink-0 whitespace-nowrap">
       {STATUS_OPTIONS.map((item) => (
         <button
           key={item.id}
           onClick={() => onSelect(item.id)}
           className={cn(
-            "px-2 py-1 rounded-md transition-colors",
+            "px-2.5 py-1 rounded-md transition-colors shrink-0 whitespace-nowrap",
             status === item.id
               ? "bg-background font-semibold text-foreground shadow-2xs"
               : "text-muted-foreground hover:text-foreground",

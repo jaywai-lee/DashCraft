@@ -14,11 +14,11 @@ export const WidgetTypeFilterGroup = ({
   onSelect,
 }: WidgetTypeFilterGroupProps) => {
   return (
-    <div className="flex items-center bg-muted/50 p-1 rounded-lg text-xs border gap-1">
+    <div className="flex items-center bg-muted/50 p-1 rounded-lg text-xs border gap-1 shrink-0 whitespace-nowrap">
       <button
         onClick={() => onSelect("all")}
         className={cn(
-          "px-2.5 py-1 rounded-md transition-colors",
+          "px-2.5 py-1 rounded-md transition-colors shrink-0 whitespace-nowrap",
           selectedType === "all"
             ? "bg-background font-semibold text-foreground shadow-2xs"
             : "text-muted-foreground hover:text-foreground",
@@ -31,7 +31,7 @@ export const WidgetTypeFilterGroup = ({
           key={item.type}
           onClick={() => onSelect(item.type as WidgetType)}
           className={cn(
-            "px-2.5 py-1 rounded-md transition-colors",
+            "px-2.5 py-1 rounded-md transition-colors shrink-0 whitespace-nowrap",
             selectedType === item.type
               ? "bg-background font-semibold text-foreground shadow-2xs"
               : "text-muted-foreground hover:text-foreground",
