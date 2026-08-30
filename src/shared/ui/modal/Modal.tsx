@@ -55,7 +55,7 @@ export const Modal = ({
 
       <div
         className={cn(
-          "relative w-full bg-background text-foreground rounded-2xl border shadow-2xl overflow-hidden z-10 space-y-5 p-6 animate-in zoom-in-95 duration-200",
+          "relative w-full max-h-[90vh] overflow-y-auto bg-background text-foreground rounded-2xl border shadow-2xl z-10 space-y-5 p-5 sm:p-6 animate-in zoom-in-95 duration-200 my-auto",
           maxWidthStyles[maxWidth],
           className,
         )}
@@ -69,9 +69,9 @@ export const Modal = ({
         </button>
 
         {(title || description) && (
-          <div className="text-center space-y-1.5 pt-2 px-6">
+          <div className="text-center space-y-1.5 pt-2 px-2 sm:px-6">
             {title && (
-              <h2 className="text-lg font-bold tracking-tight text-foreground">
+              <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
                 {title}
               </h2>
             )}

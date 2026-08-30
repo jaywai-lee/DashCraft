@@ -1,3 +1,5 @@
+"use client";
+
 import { RotateCcw } from "lucide-react";
 import { useFilterStore } from "../model/useFilterStore";
 import { Button } from "@/shared/ui/button";
@@ -20,11 +22,11 @@ export const DashboardFilterBar = () => {
   if (!isOpen) return null;
 
   return (
-    <div className="bg-background/95 backdrop-blur border-b p-4 animate-in slide-in-from-top duration-200">
-      <div className="max-w-[1800px] mx-auto flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+    <div className="bg-background/95 backdrop-blur border-b p-3 sm:p-4 animate-in slide-in-from-top duration-200">
+      <div className="max-w-[1800px] mx-auto flex flex-col gap-3">
         <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide w-full">
           <WidgetTypeFilterGroup
             selectedType={selectedWidgetType}
             onSelect={setSelectedWidgetType}
@@ -39,7 +41,7 @@ export const DashboardFilterBar = () => {
             title="필터 조건 초기화"
           >
             <RotateCcw className="w-3 h-3" />
-            <span>초기화</span>
+            <span className="hidden sm:inline">초기화</span>
           </Button>
         </div>
       </div>

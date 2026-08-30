@@ -8,6 +8,13 @@ import { cn } from "@/shared/lib/utils";
 import { COLOR_THEMES } from "../model/constants";
 import { WidgetTitleInput } from "./WidgetTitleInput";
 import { WidgetHeaderActions } from "./WidgetHeaderActions";
+import { DraggableAttributes } from "@dnd-kit/core";
+import { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
+
+interface DragHandleProps {
+  attributes: DraggableAttributes;
+  listeners: SyntheticListenerMap | undefined;
+}
 
 interface WidgetFrameProps {
   id: string;
@@ -15,6 +22,7 @@ interface WidgetFrameProps {
   color?: WidgetColor;
   width?: number;
   children: React.ReactNode;
+  dragHandleProps?: DragHandleProps;
 }
 
 export const WidgetFrame = ({
@@ -23,6 +31,7 @@ export const WidgetFrame = ({
   color = "default",
   width = 1,
   children,
+  dragHandleProps,
 }: WidgetFrameProps) => {
   const {
     removeWidget,
@@ -50,6 +59,8 @@ export const WidgetFrame = ({
       <div className={cn("h-1 w-full shrink-0", currentTheme.accentBg)} />
 
       <div
+        {...dragHandleProps?.attributes}
+        {...dragHandleProps?.listeners}
         className={cn(
           "flex items-center justify-between px-4 py-2 bg-muted/50 border-b cursor-grab active:cursor-grabbing select-none h-11 transition-colors",
           currentTheme.bg,
@@ -71,7 +82,12 @@ export const WidgetFrame = ({
         />
       </div>
 
-      <div className="flex-1 p-4 overflow-auto">{children}</div>
+      <div
+        className="flex-1 p-4 overflow-auto"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
     </div>
   );
 };

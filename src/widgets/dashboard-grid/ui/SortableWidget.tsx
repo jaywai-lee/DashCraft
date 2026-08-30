@@ -6,6 +6,7 @@ import { ClockWidget } from "@/features/clock-widget/ui/ClockWidget";
 import { DDayWidget } from "@/features/dday-widget/ui/DDayWidget";
 import { MemoWidget } from "@/features/memo-widget/ui/MemoWidget";
 import { TodoWidget } from "@/features/todo-widget";
+import { cn } from "@/shared/lib/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { memo } from "react";
@@ -28,7 +29,7 @@ export const SortableWidget = memo(
     const style = {
       transform: CSS.Translate.toString(transform),
       transition,
-      opacity: isDragging ? 0.3 : 1,
+      opacity: isDragging ? 0.4 : 1,
       zIndex: isDragging ? 50 : 1,
     };
 
@@ -58,15 +59,14 @@ export const SortableWidget = memo(
       <div
         ref={setNodeRef}
         style={style}
-        {...attributes}
-        {...listeners}
-        className={`h-fit touch-none select-none ${colSpanClass}`}
+        className={cn("h-fit touch-none select-none", colSpanClass)}
       >
         <WidgetFrame
           id={widget.id}
           title={widget.title}
           color={widget.color}
           width={widget.layout.w}
+          dragHandleProps={{ attributes, listeners }}
         >
           {renderWidgetContent()}
         </WidgetFrame>
