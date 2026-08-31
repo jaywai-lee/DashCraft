@@ -51,8 +51,10 @@ export const WidgetFrame = ({
   return (
     <div
       className={cn(
-        "relative flex flex-col w-full bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden transition-all duration-200",
-        width === 2 ? "h-[280px] md:h-[580px] md:row-span-2" : "h-[280px]",
+        "relative flex flex-col w-full bg-card text-card-foreground rounded-xl border shadow-sm transition-all duration-200",
+        width === 2
+          ? "h-auto min-h-[280px] md:h-[580px] md:row-span-2"
+          : "h-auto min-h-[280px] sm:h-[280px]",
         currentTheme.border,
       )}
     >
@@ -83,7 +85,7 @@ export const WidgetFrame = ({
       </div>
 
       <div
-        className="flex-1 p-4 overflow-auto"
+        className="flex-1 p-4 overflow-visible sm:overflow-hidden flex flex-col min-h-0"
         onPointerDown={(e) => e.stopPropagation()}
       >
         {children}
