@@ -10,6 +10,7 @@ interface TodoState {
   getTodos: (widgetId: string) => TodoItemData[];
   addTodo: (widgetId: string, text: string) => void;
   toggleTodo: (widgetId: string, todoId: string) => void;
+  editTodo: (widgetId: string, todoId: string, text: string) => void;
   deleteTodo: (widgetId: string, todoId: string) => void;
   removeWidgetTodos: (widgetId: string) => void;
   resetAllTodos: () => void;
@@ -54,6 +55,23 @@ export const useTodoStore = create<TodoState>()(
                 todo.id === todoId
                   ? { ...todo, completed: !todo.completed }
                   : todo,
+              ),
+            },
+          };
+        });
+      },
+
+      editTodo: (widgetId: string, todoId: string, text: string) => {
+        const trimmed = text.trim();
+        if (!trimmed) return;
+
+        set((state) => {
+          const currentTodos = state.todosByWidgetId[widgetId] || [];
+          return {
+            todosByWidgetId: {
+              ...state.todosByWidgetId,
+              [widgetId]: currentTodos.map((todo) =>
+                todo.id === todoId ? { ...todo, text: trimmed } : todo,
               ),
             },
           };

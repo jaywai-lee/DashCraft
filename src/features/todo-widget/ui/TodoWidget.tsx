@@ -23,6 +23,7 @@ export const TodoWidget = ({
     setInputText,
     addTodo,
     toggleTodo,
+    editTodo,
     deleteTodo,
     progressPercent,
   } = useTodo(widgetId);
@@ -65,6 +66,7 @@ export const TodoWidget = ({
         <TodoList
           todos={filteredTodos}
           onToggle={toggleTodo}
+          onEdit={editTodo}
           onDelete={deleteTodo}
           isExpanded={isExpanded}
         />
