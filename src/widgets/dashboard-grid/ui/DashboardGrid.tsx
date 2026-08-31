@@ -1,187 +1,115 @@
 "use client";
 
-import {
-  closestCenter,
-  DndContext,
-  DragEndEvent,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import { useDashboardStore } from "../model/useDashboardStore";
-import {
-  arrayMove,
-  rectSortingStrategy,
-  SortableContext,
-} from "@dnd-kit/sortable";
-import { SortableWidget } from "./SortableWidget";
 import { useEffect, useMemo, useState } from "react";
+import { DndContext, DragOverlay } from "@dnd-kit/core";
+import { rectSortingStrategy, SortableContext } from "@dnd-kit/sortable";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
-import { ChevronDown, LayoutGrid, Plus, SearchX } from "lucide-react";
-import { Button } from "@/shared/ui/button";
-import {
-  Dropdown,
-  DropdownContent,
-  DropdownItem,
-  DropdownTrigger,
-} from "@/shared/ui/dropdown/Dropdown";
-import {
-  WIDGET_CONFIG_MAP,
-  WIDGET_OPTIONS,
-  WidgetType,
-} from "../config/widgets.config";
+import { AnimatePresence } from "framer-motion";
+import { Widget } from "@/entities/widget/model/types";
+import { WidgetFrame } from "@/entities/widget/ui/WidgetFrame";
+import { TodoWidget } from "@/features/todo-widget";
+import { ClockWidget } from "@/features/clock-widget/ui/ClockWidget";
+import { DDayWidget } from "@/features/dday-widget/ui/DDayWidget";
+import { MemoWidget } from "@/features/memo-widget/ui/MemoWidget";
 import { useFilterStore } from "@/features/dashboard-filter/model/useFilterStore";
-import { useFilteredWidgets } from "../model/useFilteredWidgets";
+import { SortableWidget } from "./SortableWidget";
+import { DashboardEmpty, DashboardSearchEmpty } from "./DashboardEmptyState";
+import { DashboardGridSkeleton } from "./DashboardGridSkeleton";
+import { useDashboardDnD } from "../model/useDashboardDnd";
 
 export const DashboardGrid = () => {
   const [isMounted, setIsMounted] = useState(false);
-  const { setWidgets, addWidget } = useDashboardStore();
-  const { resetFilter } = useFilterStore();
-  const { widgets, filteredWidgets } = useFilteredWidgets();
+  const { resetFilter, searchQuery, selectedWidgetType } = useFilterStore();
 
-  const pointerSensor = useSensor(PointerSensor, {
-    activationConstraint: { distance: 8 },
-  });
+  const {
+    sensors,
+    localWidgets,
+    activeWidget,
+    handleDragStart,
+    handleDragOver,
+    handleDragEnd,
+    handleDragCancel,
+    collisionDetection,
+  } = useDashboardDnD();
 
-  const touchSensor = useSensor(TouchSensor, {
-    activationConstraint: {
-      delay: 250,
-      tolerance: 5,
-    },
-  });
-
-  const sensors = useSensors(pointerSensor, touchSensor);
+  const filteredLocalWidgets = useMemo(() => {
+    return localWidgets.filter((widget) => {
+      const matchesSearch = searchQuery
+        ? widget.title.toLowerCase().includes(searchQuery.toLowerCase())
+        : true;
+      const matchesType =
+        selectedWidgetType === "all"
+          ? true
+          : widget.type === selectedWidgetType;
+      return matchesSearch && matchesType;
+    });
+  }, [localWidgets, searchQuery, selectedWidgetType]);
 
   const widgetIds = useMemo(
-    () => filteredWidgets.map((w) => w.id),
-    [filteredWidgets],
+    () => filteredLocalWidgets.map((w) => w.id),
+    [filteredLocalWidgets],
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      const oldIndex = widgets.findIndex((w) => w.id === active.id);
-      const newIndex = widgets.findIndex((w) => w.id === over.id);
-
-      const newWidgets = arrayMove(widgets, oldIndex, newIndex);
-      setWidgets(newWidgets);
+  const renderOverlayContent = (widget: Widget) => {
+    const isExpanded = widget.layout.w === 2;
+    switch (widget.type) {
+      case "todo":
+        return <TodoWidget widgetId={widget.id} isExpanded={isExpanded} />;
+      case "clock":
+        return <ClockWidget widgetId={widget.id} isExpanded={isExpanded} />;
+      case "dday":
+        return <DDayWidget widgetId={widget.id} isExpanded={isExpanded} />;
+      case "memo":
+        return <MemoWidget widgetId={widget.id} isExpanded={isExpanded} />;
+      default:
+        return <div>알 수 없는 위젯 타입입니다.</div>;
     }
-  };
-
-  const handleAddWidget = (type: WidgetType) => {
-    const config = WIDGET_CONFIG_MAP[type];
-    if (!config) return;
-
-    addWidget({
-      type: config.type,
-      title: config.title,
-      layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
-    });
   };
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  if (!isMounted) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 items-start w-full">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="h-[320px] rounded-2xl bg-card border border-border/60 p-4 flex flex-col justify-between animate-pulse shadow-2xs"
-          >
-            <div className="flex items-center justify-between border-b pb-3 border-border/40">
-              <div className="h-4 w-24 bg-muted/60 rounded-md" />
-              <div className="flex items-center gap-1.5">
-                <div className="w-5 h-5 rounded-md bg-muted/60" />
-                <div className="w-5 h-5 rounded-md bg-muted/60" />
-              </div>
-            </div>
-            <div className="flex-1 my-3 bg-muted/30 rounded-xl" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (widgets.length === 0) {
-    return (
-      <div className="border-2 border-dashed rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-4 bg-background/50 my-4">
-        <div className="p-3 bg-primary/10 text-primary rounded-xl">
-          <LayoutGrid className="w-8 h-8" />
-        </div>
-        <div className="space-y-1 max-w-sm">
-          <h3 className="font-semibold text-base">배치된 위젯이 없습니다</h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            상단의 &quot;위젯 추가&quot; 메뉴 또는 아래 버튼을 눌러 나만의
-            대시보드를 채워보세요.
-          </p>
-        </div>
-
-        <Dropdown>
-          <DropdownTrigger>
-            <Button variant="primary" size="md" className="gap-1.5">
-              <Plus className="w-4 h-4" />
-              <span>첫 위젯 추가하기</span>
-              <ChevronDown className="w-3.5 h-3.5" />
-            </Button>
-          </DropdownTrigger>
-
-          <DropdownContent align="left">
-            {WIDGET_OPTIONS.map((item) => {
-              const Icon = item.icon;
-              return (
-                <DropdownItem
-                  key={item.type}
-                  onClick={() => handleAddWidget(item.type)}
-                >
-                  <Icon className="w-4 h-4 text-primary" />
-                  <span>{item.title}</span>
-                </DropdownItem>
-              );
-            })}
-          </DropdownContent>
-        </Dropdown>
-      </div>
-    );
-  }
-
-  if (filteredWidgets.length === 0) {
-    return (
-      <div className="border-2 border-dashed rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-4 bg-background/30 my-4">
-        <div className="p-3 bg-muted text-muted-foreground rounded-xl">
-          <SearchX className="w-8 h-8" />
-        </div>
-        <div className="space-y-1 max-w-sm">
-          <h3 className="font-semibold text-base">검색 결과가 없습니다</h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            필터 조건이나 검색어를 변경하여 다시 검색해보세요
-          </p>
-        </div>
-        <Button variant="outline" size="md" onClick={resetFilter}>
-          필터 조건 초기화
-        </Button>
-      </div>
-    );
-  }
+  if (!isMounted) return <DashboardGridSkeleton />;
+  if (localWidgets.length === 0) return <DashboardEmpty />;
+  if (filteredLocalWidgets.length === 0)
+    return <DashboardSearchEmpty onResetFilter={resetFilter} />;
 
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={collisionDetection}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
       modifiers={[restrictToWindowEdges]}
     >
       <SortableContext items={widgetIds} strategy={rectSortingStrategy}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 items-start w-full">
-          {filteredWidgets.map((widget) => (
-            <SortableWidget key={widget.id} widget={widget} />
-          ))}
+          <AnimatePresence mode="popLayout">
+            {/* 💡 filteredLocalWidgets 기반으로 렌더링 */}
+            {filteredLocalWidgets.map((widget) => (
+              <SortableWidget key={widget.id} widget={widget} />
+            ))}
+          </AnimatePresence>
         </div>
       </SortableContext>
+
+      <DragOverlay dropAnimation={null}>
+        {activeWidget ? (
+          <div className="w-full opacity-90 scale-[1.02] shadow-2xl cursor-grabbing pointer-events-none">
+            <WidgetFrame
+              id={activeWidget.id}
+              title={activeWidget.title}
+              color={activeWidget.color}
+              width={activeWidget.layout.w}
+            >
+              {renderOverlayContent(activeWidget)}
+            </WidgetFrame>
+          </div>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 };
