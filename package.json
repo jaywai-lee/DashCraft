@@ -20,6 +20,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@sentry/nextjs": "^8.47.0",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "framer-motion": "^13.1.1",
     "lucide-react": "^0.469.0",
     "next": "^15.1.7",
