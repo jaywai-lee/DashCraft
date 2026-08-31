@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "@/styles/globals.css";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { Toaster } from "sonner";
+import { CommandPalette } from "@/features/command-palette/ui/CommandPalette";
 
 const pretendard = localFont({
   src: [
@@ -51,6 +52,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <CommandPalette />
           <Toaster position="top-center" richColors />
         </ThemeProvider>
       </body>

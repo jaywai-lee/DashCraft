@@ -86,10 +86,14 @@ export default function DashboardPage() {
             size="sm"
             onClick={toggleFilter}
             className="relative flex-1 sm:flex-initial h-8 px-2.5 sm:px-3 text-xs gap-1.5"
-            title="검색 및 필터"
+            title="검색 및 필터 (Cmd+K / Ctrl+K)"
           >
             <Search className="w-3.5 h-3.5" />
             <span>검색 & 필터</span>
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground ml-1">
+              <span className="text-[9px]">⌘</span>K
+            </kbd>
+
             {isFilterActive && (
               <span className="w-2 h-2 rounded-full bg-primary absolute -top-0.5 -right-0.5 ring-2 ring-background" />
             )}
@@ -149,8 +153,19 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-extrabold tracking-tight">
               내 워크스페이스
             </h1>
-            <p className="text-xs text-muted-foreground">
-              위젯을 자유롭게 드래그하여 배치하고, 크기와 이름을 변경해보세요.
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
+              <span>위젯을 자유롭게 드래그하여 배치해보세요.</span>
+              <span className="hidden sm:inline-block">•</span>
+              <span className="hidden sm:inline-flex items-center gap-1">
+                빠른 명령 실행:
+                <kbd className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-medium text-muted-foreground bg-background border rounded shadow-2xs">
+                  ⌘K
+                </kbd>
+                또는
+                <kbd className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-medium text-muted-foreground bg-background border rounded shadow-2xs">
+                  Ctrl+K
+                </kbd>
+              </span>
             </p>
           </div>
 
