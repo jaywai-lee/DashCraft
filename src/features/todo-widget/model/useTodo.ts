@@ -4,7 +4,8 @@ import React, { useState } from "react";
 import { useTodoStore } from "./useTodoStore";
 
 export const useTodo = (widgetId: string) => {
-  const { getTodos, addTodo, toggleTodo, deleteTodo } = useTodoStore();
+  const { getTodos, addTodo, toggleTodo, editTodo, deleteTodo } =
+    useTodoStore();
   const todos = getTodos(widgetId);
   const [inputText, setInputText] = useState("");
 
@@ -27,6 +28,8 @@ export const useTodo = (widgetId: string) => {
     setInputText,
     addTodo: handleAddTodo,
     toggleTodo: (id: string) => toggleTodo(widgetId, id),
+    editTodo: (todoId: string, text: string) =>
+      editTodo(widgetId, todoId, text),
     deleteTodo: (id: string) => deleteTodo(widgetId, id),
     progressPercent,
   };
