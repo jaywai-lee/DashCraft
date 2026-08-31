@@ -42,27 +42,29 @@ export const WidgetTitleInput = ({
   };
 
   if (isEditing) {
-    <div
-      className="flex items-center gap-1 w-full max-w-[220px]"
-      onPointerDown={(e) => e.stopPropagation()}
-    >
-      <input
-        type="text"
-        value={inputTitle}
-        onChange={(e) => setInputTitle(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onBlur={handleTitleSubmit}
-        autoFocus
-        className="px-1 py-0.5 text-sm font-semibold text-foreground bg-background border border-primary rounded outline-none focus:ring-1 focus:ring-primary w-full transition-all"
-      />
-      <button
-        type="button"
-        onClick={handleTitleSubmit}
-        className="p-1 hover:bg-accent rounded text-primary shrink-0"
+    return (
+      <div
+        className="flex items-center gap-1 w-full max-w-[220px]"
+        onPointerDown={(e) => e.stopPropagation()}
       >
-        <Check className="w-3.5 h-3.5" />
-      </button>
-    </div>;
+        <input
+          type="text"
+          value={inputTitle}
+          onChange={(e) => setInputTitle(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleTitleSubmit}
+          autoFocus
+          className="px-1 py-0.5 text-sm font-semibold text-foreground bg-background border border-primary rounded outline-none focus:ring-1 focus:ring-primary w-full transition-all"
+        />
+        <button
+          type="button"
+          onClick={handleTitleSubmit}
+          className="p-1 hover:bg-accent rounded text-primary shrink-0"
+        >
+          <Check className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    );
   }
 
   return (
