@@ -68,21 +68,14 @@ export const WidgetFrame = ({
           currentTheme.bg,
         )}
       >
-        <div
-          className="flex items-center gap-1.5 flex-1 mr-2 overflow-hidden"
-          onPointerDown={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
+        <div className="flex items-center gap-1.5 flex-1 mr-2 overflow-hidden">
           <WidgetTitleInput
             title={title}
             onUpdateTitle={(newTitle) => updateWidgetTitle(id, newTitle)}
           />
         </div>
 
-        <div
-          onPointerDown={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
+        <div>
           <WidgetHeaderActions
             color={color}
             width={width}
@@ -93,10 +86,7 @@ export const WidgetFrame = ({
         </div>
       </div>
 
-      <div
-        className="flex-1 p-4 overflow-visible sm:overflow-hidden flex flex-col min-h-0"
-        onPointerDown={(e) => e.stopPropagation()}
-      >
+      <div className="flex-1 p-4 overflow-visible sm:overflow-hidden flex flex-col min-h-0">
         {children}
       </div>
     </div>
