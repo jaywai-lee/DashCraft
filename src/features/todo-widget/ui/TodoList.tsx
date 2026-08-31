@@ -31,10 +31,11 @@ export const TodoList = ({
   return (
     <ul
       className={cn(
-        "space-y-2 overflow-y-auto pr-1 flex-1 transition-all",
+        "space-y-2 pr-1 flex-1 transition-all",
+        "h-auto max-h-none overflow-visible",
         isExpanded
-          ? "max-h-[480px] min-h-[300px]"
-          : "max-h-[220px] min-h-[120px]",
+          ? "sm:max-h-[460px] sm:min-h-[300px] sm:overflow-y-auto"
+          : "sm:max-h-[160px] sm:min-h-[120px] sm:overflow-y-auto",
       )}
     >
       {todos.map((todo) => (

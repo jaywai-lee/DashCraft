@@ -54,19 +54,21 @@ export const TodoWidget = ({
   }
 
   return (
-    <div className="flex flex-col h-full gap-3">
+    <div className="w-full flex flex-col gap-2.5 h-full">
       <TodoProgress percent={progressPercent} />
       <TodoForm
         inputText={inputText}
         onChangeText={setInputText}
         onSubmit={addTodo}
       />
-      <TodoList
-        todos={filteredTodos}
-        onToggle={toggleTodo}
-        onDelete={deleteTodo}
-        isExpanded={isExpanded}
-      />
+      <div className="w-full flex-1 min-h-0 h-auto overflow-visible">
+        <TodoList
+          todos={filteredTodos}
+          onToggle={toggleTodo}
+          onDelete={deleteTodo}
+          isExpanded={isExpanded}
+        />
+      </div>
     </div>
   );
 };
