@@ -83,7 +83,7 @@ export const CommandPalette = () => {
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-xl bg-popover text-popover-foreground rounded-xl border shadow-2xl overflow-hidden"
       >
-        <Command value={query} onValueChange={setQuery} className="w-full">
+        <Command label="Command Palette" className="w-full">
           <div className="flex items-center border-b px-3">
             <Search className="w-4 h-4 mr-2 shrink-0 opacity-50" />
             <Command.Input
@@ -107,6 +107,7 @@ export const CommandPalette = () => {
                 {widgets.map((widget) => (
                   <Command.Item
                     key={widget.id}
+                    value={`${widget.title}-${widget.id}`}
                     onSelect={() => handleFocusWidget(widget.id)}
                     className="flex items-center gap-2 px-2 py-2 rounded-md text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent"
                   >
