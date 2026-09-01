@@ -4,18 +4,44 @@ import { useMemoStore } from "@/features/memo-widget/model/useMemoStore";
 import { useTodoStore } from "@/features/todo-widget/model/useTodoStore";
 import { useDDayStore } from "@/features/dday-widget/model/useDDayStore";
 import { useMemo } from "react";
+import { isWithinDateRange } from "../lib/isWithinDateRange";
+import { Widget } from "@/entities/widget/model/types";
 
-export const useFilteredWidgets = () => {
-  const { widgets } = useDashboardStore();
-  const { searchQuery, selectedWidgetType } = useFilterStore();
+export const useFilteredWidgets = (targetWidgets?: Widget[]) => {
+  const { widgets: storeWidgets } = useDashboardStore();
+  const widgetsToFilter = targetWidgets ?? storeWidgets;
+  const {
+    searchQuery,
+    selectedWidgetType,
+    todoStatus,
+    datePreset,
+    startDate,
+    endDate,
+  } = useFilterStore();
   const { memos } = useMemoStore();
   const { todosByWidgetId } = useTodoStore();
   const { ddays } = useDDayStore();
 
   const filteredWidgets = useMemo(() => {
-    return widgets.filter((widget) => {
+    return widgetsToFilter.filter((widget) => {
       if (selectedWidgetType !== "all" && widget.type !== selectedWidgetType) {
         return false;
+      }
+
+      if (
+        !isWithinDateRange(widget.createdAt, datePreset, startDate, endDate)
+      ) {
+        return false;
+      }
+
+      if (widget.type === "todo" && todoStatus !== "all") {
+        const widgetTodos = todosByWidgetId[widget.id] || [];
+        if (widgetTodos.length > 0) {
+          const hasMathingTodo = widgetTodos.some((t) =>
+            todoStatus === "active" ? !t.completed : t.completed,
+          );
+          if (!hasMathingTodo) return false;
+        }
       }
 
       if (searchQuery.trim() !== "") {
@@ -44,7 +70,18 @@ export const useFilteredWidgets = () => {
 
       return true;
     });
-  }, [widgets, selectedWidgetType, searchQuery, memos, todosByWidgetId, ddays]);
+  }, [
+    widgetsToFilter,
+    selectedWidgetType,
+    todoStatus,
+    datePreset,
+    startDate,
+    endDate,
+    searchQuery,
+    memos,
+    todosByWidgetId,
+    ddays,
+  ]);
 
-  return { widgets, filteredWidgets };
+  return { filteredWidgets };
 };
