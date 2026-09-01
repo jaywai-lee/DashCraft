@@ -27,6 +27,7 @@ export const useDashboardStore = create<DashboardState>()(
           const newWidget: Widget = {
             ...newWidgetData,
             id,
+            createdAt: newWidgetData.createdAt ?? new Date().toISOString(),
             layout: { ...newWidgetData.layout, id },
           };
           return { widgets: [...state.widgets, newWidget] };

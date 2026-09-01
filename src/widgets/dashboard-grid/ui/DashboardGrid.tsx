@@ -16,10 +16,11 @@ import { SortableWidget } from "./SortableWidget";
 import { DashboardEmpty, DashboardSearchEmpty } from "./DashboardEmptyState";
 import { DashboardGridSkeleton } from "./DashboardGridSkeleton";
 import { useDashboardDnD } from "../model/useDashboardDnd";
+import { useFilteredWidgets } from "../model/useFilteredWidgets";
 
 export const DashboardGrid = () => {
   const [isMounted, setIsMounted] = useState(false);
-  const { resetFilter, searchQuery, selectedWidgetType } = useFilterStore();
+  const { resetFilter } = useFilterStore();
 
   const {
     sensors,
@@ -32,18 +33,8 @@ export const DashboardGrid = () => {
     collisionDetection,
   } = useDashboardDnD();
 
-  const filteredLocalWidgets = useMemo(() => {
-    return localWidgets.filter((widget) => {
-      const matchesSearch = searchQuery
-        ? widget.title.toLowerCase().includes(searchQuery.toLowerCase())
-        : true;
-      const matchesType =
-        selectedWidgetType === "all"
-          ? true
-          : widget.type === selectedWidgetType;
-      return matchesSearch && matchesType;
-    });
-  }, [localWidgets, searchQuery, selectedWidgetType]);
+  const { filteredWidgets: filteredLocalWidgets } =
+    useFilteredWidgets(localWidgets);
 
   const widgetIds = useMemo(
     () => filteredLocalWidgets.map((w) => w.id),

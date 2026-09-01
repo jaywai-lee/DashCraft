@@ -18,4 +18,5 @@ export interface Widget {
   color?: WidgetColor;
   layout: LayoutItem;
   config?: Record<string, unknown>;
+  createdAt?: string;
 }

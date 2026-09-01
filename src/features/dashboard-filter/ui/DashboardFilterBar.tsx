@@ -6,6 +6,7 @@ import { Button } from "@/shared/ui/button";
 import { FilterSearchInput } from "./FilterSearchInput";
 import { WidgetTypeFilterGroup } from "./WidgetTypeFilterGroup";
 import { TodoStatusFilterGroup } from "./TodoStatusFilterGroup";
+import { DateRangeFilterGroup } from "./DateRangeFilterGroup";
 
 export const DashboardFilterBar = () => {
   const {
@@ -13,9 +14,14 @@ export const DashboardFilterBar = () => {
     searchQuery,
     selectedWidgetType,
     todoStatus,
+    datePreset,
+    startDate,
+    endDate,
     setSearchQuery,
     setSelectedWidgetType,
     setTodoStatus,
+    setDatePreset,
+    setCustomDateRange,
     resetFilter,
   } = useFilterStore();
 
@@ -32,6 +38,14 @@ export const DashboardFilterBar = () => {
             onSelect={setSelectedWidgetType}
           />
           <TodoStatusFilterGroup status={todoStatus} onSelect={setTodoStatus} />
+
+          <DateRangeFilterGroup
+            datePreset={datePreset}
+            startDate={startDate}
+            endDate={endDate}
+            onSelectPreset={setDatePreset}
+            onChangeCustomRange={setCustomDateRange}
+          />
 
           <Button
             variant="ghost"
