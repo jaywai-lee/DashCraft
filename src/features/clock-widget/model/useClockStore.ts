@@ -15,6 +15,8 @@ export interface ClockWidgetState {
   breakDuration: number;
   isSoundEnabled: boolean;
   isNotificationEnabled: boolean;
+  startTimeStamp?: number | null;
+  targetEndTime?: number | null;
 }
 
 interface ClockStore {
@@ -23,7 +25,7 @@ interface ClockStore {
   setMode: (widgetId: string, mode: ClockMode) => void;
   toggleTimer: (widgetId: string) => void;
   resetTimer: (widgetId: string) => void;
-  tick: (widgetId: string) => void;
+  syncTimeLeft: (widgetId: string, nextTimeLeft: number) => void;
   switchPhase: (widgetId: string, phase: TimerPhase) => void;
   toggleSound: (widgetId: string) => void;
   toggleNotification: (widgetId: string) => void;
@@ -39,6 +41,8 @@ const DEFAULT_STATE: ClockWidgetState = {
   breakDuration: 5 * 60,
   isSoundEnabled: true,
   isNotificationEnabled: true,
+  startTimeStamp: null,
+  targetEndTime: null,
 };
 
 export const useClockStore = create<ClockStore>()(
@@ -64,10 +68,22 @@ export const useClockStore = create<ClockStore>()(
       toggleTimer: (widgetId: string) =>
         set((state) => {
           const current = state.states[widgetId] || DEFAULT_STATE;
+          const nextIsRunning = !current.isRunning;
+          const now = Date.now();
+
+          const targetEndTime = nextIsRunning
+            ? now + current.timeLeft * 1000
+            : null;
+
           return {
             states: {
               ...state.states,
-              [widgetId]: { ...current, isRunning: !current.isRunning },
+              [widgetId]: {
+                ...current,
+                isRunning: !current.isRunning,
+                startTimeStamp: nextIsRunning ? now : null,
+                targetEndTime,
+              },
             },
           };
         }),
@@ -91,13 +107,10 @@ export const useClockStore = create<ClockStore>()(
           };
         }),
 
-      tick: (widgetId: string) =>
+      syncTimeLeft: (widgetId: string, nextTimeLeft: number) =>
         set((state) => {
           const current = state.states[widgetId] || DEFAULT_STATE;
-          if (!current.isRunning || current.timeLeft <= 0) return state;
-
-          const nextTime = current.timeLeft - 1;
-          if (nextTime === 0) {
+          if (nextTimeLeft <= 0) {
             return {
               states: {
                 ...state.states,
@@ -105,15 +118,16 @@ export const useClockStore = create<ClockStore>()(
                   ...current,
                   timeLeft: 0,
                   isRunning: false,
+                  startTimeStamp: null,
+                  targetEndTime: null,
                 },
               },
             };
           }
-
           return {
             states: {
               ...state.states,
-              [widgetId]: { ...current, timeLeft: nextTime },
+              [widgetId]: { ...current, timeLeft: nextTimeLeft },
             },
           };
         }),
@@ -131,6 +145,8 @@ export const useClockStore = create<ClockStore>()(
                 timerPhase: phase,
                 timeLeft: duration,
                 isRunning: false,
+                startTimeStamp: null,
+                targetEndTime: null,
               },
             },
           };
