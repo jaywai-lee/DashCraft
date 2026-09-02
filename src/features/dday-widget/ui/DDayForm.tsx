@@ -43,6 +43,7 @@ export const DDayForm = ({ onAdd }: DDayFormProps) => {
         variant="primary"
         size="sm"
         className="h-8 w-8 p-0 shrink-0"
+        title="D-Day 추가"
       >
         <Plus className="w-3.5 h-3.5" />
       </Button>

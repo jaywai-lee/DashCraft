@@ -27,6 +27,9 @@ export const DashboardFilterBar = () => {
 
   if (!isOpen) return null;
 
+  const showTodoStatusFilter =
+    selectedWidgetType === "all" || selectedWidgetType === "todo";
+
   return (
     <div className="bg-background/95 backdrop-blur border-b p-3 sm:p-4 animate-in slide-in-from-top duration-200">
       <div className="max-w-[1800px] mx-auto flex flex-col gap-3">
@@ -37,7 +40,12 @@ export const DashboardFilterBar = () => {
             selectedType={selectedWidgetType}
             onSelect={setSelectedWidgetType}
           />
-          <TodoStatusFilterGroup status={todoStatus} onSelect={setTodoStatus} />
+          {showTodoStatusFilter && (
+            <TodoStatusFilterGroup
+              status={todoStatus}
+              onSelect={setTodoStatus}
+            />
+          )}
 
           <DateRangeFilterGroup
             datePreset={datePreset}
