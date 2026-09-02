@@ -13,14 +13,8 @@ export const TodoForm = ({
   onChangeText,
   onSubmit,
 }: TodoFormProps) => {
-  const handleSubmit = (e: React.SubmitEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onSubmit(e);
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
+    <form onSubmit={onSubmit} className="flex gap-2">
       <input
         type="text"
         value={inputText}

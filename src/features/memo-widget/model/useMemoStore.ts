@@ -21,17 +21,22 @@ export const useMemoStore = create<MemoState>()(
   persist(
     (set) => ({
       memos: {},
+
       updateMemo: (widgetId, content) =>
-        set((state) => ({
-          memos: {
-            ...state.memos,
-            [widgetId]: {
-              id: widgetId,
-              content,
-              updatedAt: new Date().toISOString(),
+        set((state) => {
+          const currentMemo = state.memos[widgetId];
+          return {
+            memos: {
+              ...state.memos,
+              [widgetId]: {
+                ...currentMemo,
+                id: widgetId,
+                content,
+                updatedAt: new Date().toISOString(),
+              },
             },
-          },
-        })),
+          };
+        }),
 
       updateHighlight: (widgetId, highlight) =>
         set((state) => {
