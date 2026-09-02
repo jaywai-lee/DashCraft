@@ -69,7 +69,7 @@ const TodoItem = ({
             <button
               type="button"
               onClick={handleSave}
-              className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-primary/10 text-primary transition-colors shrink-0"
+              className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-primary/10 text-primary transition-colors shrink-0 cursor-pointer"
               aria-label="저장"
             >
               <Check className="w-3.5 h-3.5" />
@@ -80,7 +80,7 @@ const TodoItem = ({
                 setEditText(todo.text);
                 setIsEditing(false);
               }}
-              className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground transition-colors shrink-0"
+              className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground transition-colors shrink-0 cursor-pointer"
               aria-label="취소"
             >
               <X className="w-3.5 h-3.5" />
@@ -116,7 +116,7 @@ const TodoItem = ({
             <button
               type="button"
               onClick={() => setIsEditing(true)}
-              className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
+              className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0 cursor-pointer"
               aria-label="수정"
             >
               <Edit2 className="w-3.5 h-3.5" />
@@ -124,7 +124,7 @@ const TodoItem = ({
             <button
               type="button"
               onClick={() => onDelete(todo.id)}
-              className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors shrink-0"
+              className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors shrink-0 cursor-pointer"
               aria-label="삭제"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -159,10 +159,10 @@ export const TodoList = ({
   return (
     <ul
       className={cn(
-        "space-y-2 pr-1 flex-1 transition-all w-full",
+        "space-y-2 pr-1 flex-1 transition-all w-full overflow-y-auto scrollbar-thin",
         isExpanded
-          ? "sm:max-h-[460px] sm:min-h-[300px] sm:overflow-y-auto"
-          : "sm:max-h-[160px] sm:min-h-[120px] sm:overflow-y-auto",
+          ? "max-h-[460px] min-h-[300px]"
+          : "max-h-[160px] min-h-[120px]",
       )}
     >
       {todos.map((todo) => (

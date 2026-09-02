@@ -11,6 +11,11 @@ interface MemoWidgetProps {
   isExpanded?: boolean;
 }
 
+const getPlainTextLength = (element: HTMLDivElement | null) => {
+  if (!element) return 0;
+  return element.innerText.replace(/[\s\u200B]/g, "").length;
+};
+
 export const MemoWidget = ({
   widgetId,
   isExpanded = false,
@@ -29,13 +34,12 @@ export const MemoWidget = ({
     },
   );
 
-  const getPlainTextLength = (element: HTMLDivElement | null) => {
-    if (!element) return 0;
-    return element.innerText.replace(/[\s\u200B]/g, "").length;
-  };
-
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== htmlContent) {
+    if (
+      editorRef.current &&
+      editorRef.current.innerHTML !== htmlContent &&
+      document.activeElement !== editorRef.current
+    ) {
       editorRef.current.innerHTML = htmlContent;
       setTextLength(getPlainTextLength(editorRef.current));
     }
