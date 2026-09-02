@@ -56,7 +56,7 @@ export const WidgetFrame = ({
       className={cn(
         "relative flex flex-col w-full bg-card text-card-foreground rounded-xl border shadow-sm transition-all duration-200",
         width === 2
-          ? "h-auto min-h-[280px] md:h-[580px] md:row-span-2"
+          ? "h-auto min-h-[380px] sm:h-[580px] sm:row-span-2"
           : "h-auto min-h-[280px] sm:h-[280px]",
         currentTheme.border,
       )}

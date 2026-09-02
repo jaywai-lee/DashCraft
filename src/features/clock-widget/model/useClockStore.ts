@@ -29,7 +29,7 @@ interface ClockStore {
   switchPhase: (widgetId: string, phase: TimerPhase) => void;
   toggleSound: (widgetId: string) => void;
   toggleNotification: (widgetId: string) => void;
-  removeWidgetClock: (WidgetId: string) => void;
+  removeWidgetClock: (widgetId: string) => void;
 }
 
 const DEFAULT_STATE: ClockWidgetState = {
@@ -80,7 +80,7 @@ export const useClockStore = create<ClockStore>()(
               ...state.states,
               [widgetId]: {
                 ...current,
-                isRunning: !current.isRunning,
+                isRunning: nextIsRunning,
                 startTimeStamp: nextIsRunning ? now : null,
                 targetEndTime,
               },

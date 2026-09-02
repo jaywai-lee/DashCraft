@@ -42,7 +42,7 @@ export const SortableWidget = ({ widget }: SortableWidgetProps) => {
 
   const colSpanClass =
     widget.layout.w === 2
-      ? "col-span-1 md:col-span-2 md:row-span-2"
+      ? "col-span-1 row-span-2 md:col-span-2"
       : "col-span-1";
 
   const handleRemove = (id: string) => {

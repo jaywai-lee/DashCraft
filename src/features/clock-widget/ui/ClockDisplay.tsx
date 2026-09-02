@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, memo, useRef } from "react";
+import React, { useEffect, memo, useState } from "react";
 import {
   formatDateParts,
   formatTimeToTimeString,
@@ -12,20 +12,19 @@ interface ClockDisplayProps {
 
 export const ClockDisplay = memo(
   ({ isExpanded }: ClockDisplayProps) => {
-    const dateRef = useRef<HTMLParagraphElement>(null);
-    const timeRef = useRef<HTMLParagraphElement>(null);
+    const [timeInfo, setTimeInfo] = useState<{
+      dateString: string;
+      dayOfWeek: string;
+      timeString: string;
+    } | null>(null);
 
     useEffect(() => {
       const updateClock = () => {
         const now = new Date();
         const { dateString, dayOfWeek } = formatDateParts(now);
+        const timeString = formatTimeToTimeString(now);
 
-        if (dateRef.current) {
-          dateRef.current.innerHTML = `<span>${dateString}</span><span class="text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-md">${dayOfWeek}</span>`;
-        }
-        if (timeRef.current) {
-          timeRef.current.textContent = formatTimeToTimeString(now);
-        }
+        setTimeInfo({ dateString, dayOfWeek, timeString });
       };
 
       updateClock();
@@ -34,25 +33,32 @@ export const ClockDisplay = memo(
       return () => clearInterval(interval);
     }, []);
 
+    if (!timeInfo) return null;
+
     return (
       <div className="flex flex-col items-center justify-center my-auto space-y-3 select-none text-center">
         <p
-          ref={dateRef}
           className={
             isExpanded
               ? "font-semibold text-muted-foreground tracking-wide transition-all flex items-center gap-1.5 text-lg sm:text-xl"
               : "font-semibold text-muted-foreground tracking-wide transition-all flex items-center gap-1.5 text-xs sm:text-sm"
           }
-        />
+        >
+          <span>{timeInfo.dateString}</span>
+          <span className="text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-md">
+            {timeInfo.dayOfWeek}
+          </span>
+        </p>
 
         <p
-          ref={timeRef}
           className={
             isExpanded
               ? "font-black tracking-tight tabular-nums text-foreground drop-shadow-sm transition-all text-7xl sm:text-8xl lg:text-9xl"
               : "font-black tracking-tight tabular-nums text-foreground drop-shadow-sm transition-all text-5xl sm:text-6xl"
           }
-        />
+        >
+          {timeInfo.timeString}
+        </p>
       </div>
     );
   },
