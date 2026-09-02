@@ -13,6 +13,8 @@ export interface ClockWidgetState {
   isRunning: boolean;
   workDuration: number;
   breakDuration: number;
+  isSoundEnabled: boolean;
+  isNotificationEnabled: boolean;
 }
 
 interface ClockStore {
@@ -23,6 +25,8 @@ interface ClockStore {
   resetTimer: (widgetId: string) => void;
   tick: (widgetId: string) => void;
   switchPhase: (widgetId: string, phase: TimerPhase) => void;
+  toggleSound: (widgetId: string) => void;
+  toggleNotification: (widgetId: string) => void;
   removeWidgetClock: (WidgetId: string) => void;
 }
 
@@ -33,6 +37,8 @@ const DEFAULT_STATE: ClockWidgetState = {
   isRunning: false,
   workDuration: 25 * 60,
   breakDuration: 5 * 60,
+  isSoundEnabled: true,
+  isNotificationEnabled: true,
 };
 
 export const useClockStore = create<ClockStore>()(
@@ -92,19 +98,12 @@ export const useClockStore = create<ClockStore>()(
 
           const nextTime = current.timeLeft - 1;
           if (nextTime === 0) {
-            const nextPhase: TimerPhase =
-              current.timerPhase === "work" ? "break" : "work";
-            const nextDuration =
-              nextPhase === "work"
-                ? current.workDuration
-                : current.breakDuration;
             return {
               states: {
                 ...state.states,
                 [widgetId]: {
                   ...current,
-                  timerPhase: nextPhase,
-                  timeLeft: nextDuration,
+                  timeLeft: 0,
                   isRunning: false,
                 },
               },
@@ -132,6 +131,34 @@ export const useClockStore = create<ClockStore>()(
                 timerPhase: phase,
                 timeLeft: duration,
                 isRunning: false,
+              },
+            },
+          };
+        }),
+
+      toggleSound: (widgetId: string) =>
+        set((state) => {
+          const current = state.states[widgetId] || DEFAULT_STATE;
+          return {
+            states: {
+              ...state.states,
+              [widgetId]: {
+                ...current,
+                isSoundEnabled: !current.isSoundEnabled,
+              },
+            },
+          };
+        }),
+
+      toggleNotification: (widgetId: string) =>
+        set((state) => {
+          const current = state.states[widgetId] || DEFAULT_STATE;
+          return {
+            states: {
+              ...state.states,
+              [widgetId]: {
+                ...current,
+                isNotificationEnabled: !current.isNotificationEnabled,
               },
             },
           };
