@@ -16,7 +16,7 @@ export const usePomodoroTimer = (widgetId: string) => {
     getWidgetState,
     toggleTimer,
     resetTimer,
-    tick,
+    syncTimeLeft,
     switchPhase,
     toggleSound,
     toggleNotification,
@@ -27,6 +27,7 @@ export const usePomodoroTimer = (widgetId: string) => {
     timerPhase,
     timeLeft,
     isRunning,
+    targetEndTime,
     isSoundEnabled = true,
     isNotificationEnabled = true,
   } = state;
@@ -35,15 +36,41 @@ export const usePomodoroTimer = (widgetId: string) => {
 
   useEffect(() => {
     let timerInterval: NodeJS.Timeout | null = null;
-    if (isRunning) {
-      timerInterval = setInterval(() => {
-        tick(widgetId);
-      }, 1000);
-    }
-    return () => {
-      if (timerInterval) clearInterval(timerInterval);
+
+    const updateExactTimeLeft = () => {
+      if (!isRunning || !targetEndTime) return;
+
+      const now = Date.now();
+      const remainingSeconds = Math.max(
+        0,
+        Math.round((targetEndTime - now) / 1000),
+      );
+
+      syncTimeLeft(widgetId, remainingSeconds);
     };
-  }, [isRunning, tick, widgetId]);
+
+    if (isRunning && targetEndTime) {
+      updateExactTimeLeft();
+      timerInterval = setInterval(() => {
+        updateExactTimeLeft();
+      }, 1000);
+
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === "visible") {
+          updateExactTimeLeft();
+        }
+      };
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+
+      return () => {
+        if (timerInterval) clearInterval(timerInterval);
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange,
+        );
+      };
+    }
+  }, [isRunning, targetEndTime, widgetId, syncTimeLeft]);
 
   useEffect(() => {
     if (prevTimeLeftRef.current > 0 && timeLeft === 0) {
