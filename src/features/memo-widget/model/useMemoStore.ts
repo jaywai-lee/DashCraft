@@ -13,7 +13,7 @@ interface MemoState {
   memos: Record<string, MemoData>;
   updateMemo: (widgetId: string, content: string) => void;
   updateHighlight: (widgetId: string, highlight: HighlightColor) => void;
-  deleteMemo: (widgetId: string) => void;
+  removeWidgetMemo: (widgetId: string) => void;
   resetAllMemos: () => void;
 }
 
@@ -50,7 +50,7 @@ export const useMemoStore = create<MemoState>()(
           };
         }),
 
-      deleteMemo: (widgetId) =>
+      removeWidgetMemo: (widgetId) =>
         set((state) => {
           const next = { ...state.memos };
           delete next[widgetId];

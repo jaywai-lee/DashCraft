@@ -19,7 +19,7 @@ describe("useMemoStore", () => {
 
   it("메모를 정상적으로 삭제해야 한다", () => {
     useMemoStore.getState().updateMemo(widgetId, "삭제될 메모");
-    useMemoStore.getState().deleteMemo(widgetId);
+    useMemoStore.getState().removeWidgetMemo(widgetId);
 
     const memo = useMemoStore.getState().memos[widgetId];
     expect(memo).toBeUndefined();

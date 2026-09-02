@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Edit2 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 interface WidgetTitleInputProps {
   title: string;
@@ -14,15 +14,19 @@ export const WidgetTitleInput = ({
 }: WidgetTitleInputProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [inputTitle, setInputTitle] = useState(title);
+  const isSubmittingRef = useRef(false);
 
   const handleStartEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     setInputTitle(title);
     setIsEditing(true);
+    isSubmittingRef.current = false;
   };
 
   const handleTitleSubmit = () => {
     const trimmed = inputTitle.trim();
+    isSubmittingRef.current = true;
+
     if (trimmed) {
       onUpdateTitle(trimmed);
     } else {
@@ -36,6 +40,7 @@ export const WidgetTitleInput = ({
     if (e.key === "Enter") {
       handleTitleSubmit();
     } else if (e.key === "Escape") {
+      isSubmittingRef.current = true;
       setInputTitle(title);
       setIsEditing(false);
     }
