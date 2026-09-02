@@ -35,11 +35,11 @@ export const LandingFeatures = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {FEATURES.map((feature, idx) => {
+          {FEATURES.map((feature) => {
             const Icon = feature.icon;
             return (
               <div
-                key={idx}
+                key={feature.title}
                 className="p-6 rounded-xl border bg-card space-y-3"
               >
                 <div className="p-2.5 bg-primary/10 text-primary w-fit rounded-lg">

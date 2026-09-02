@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { WidgetColor } from "../model/types";
 import { Palette } from "lucide-react";
 import { COLOR_THEMES } from "../model/constants";
@@ -17,11 +17,27 @@ export const WidgetColorPicker = ({
   onSelectColor,
 }: WidgetColorPickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleSelect = (selectedColor: WidgetColor) => {
     onSelectColor(selectedColor);
     setIsOpen(false);
   };
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
 
   return (
     <div className="relative">
@@ -38,7 +54,12 @@ export const WidgetColorPicker = ({
 
       {isOpen && (
         <div className="absolute top-8 right-0 z-50 p-2 bg-popover text-popover-foreground border rounded-xl shadow-xl flex items-center gap-1.5 animate-in zoom-in-95 duration-150">
-          {(Object.keys(COLOR_THEMES) as WidgetColor[]).map((themeKey) => {
+          {(
+            Object.entries(COLOR_THEMES) as [
+              WidgetColor,
+              (typeof COLOR_THEMES)[WidgetColor],
+            ][]
+          ).map(([themeKey, themeValue]) => {
             const isSelected = color === themeKey;
 
             return (
@@ -53,7 +74,7 @@ export const WidgetColorPicker = ({
                     ? "ring-2 ring-foreground ring-offset-2 ring-offset-popover scale-110"
                     : "opacity-80 hover:opacity-100",
                 )}
-                title={COLOR_THEMES[themeKey].label}
+                title={themeValue.label}
               />
             );
           })}

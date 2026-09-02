@@ -1,6 +1,5 @@
 "use client";
 
-import { useTodoStore } from "@/features/todo-widget/model/useTodoStore";
 import { useDashboardStore } from "@/widgets/dashboard-grid/model/useDashboardStore";
 import React from "react";
 import { WidgetColor } from "../model/types";
@@ -23,6 +22,7 @@ interface WidgetFrameProps {
   width?: number;
   children: React.ReactNode;
   dragHandleProps?: DragHandleProps;
+  onRemove?: (id: string) => void;
 }
 
 export const WidgetFrame = ({
@@ -32,6 +32,7 @@ export const WidgetFrame = ({
   width = 1,
   children,
   dragHandleProps,
+  onRemove,
 }: WidgetFrameProps) => {
   const {
     removeWidget,
@@ -39,13 +40,15 @@ export const WidgetFrame = ({
     updateWidgetTitle,
     updateWidgetColor,
   } = useDashboardStore();
-  const { removeWidgetTodos } = useTodoStore();
 
   const currentTheme = COLOR_THEMES[color] || COLOR_THEMES.default;
 
   const handleRemove = () => {
-    removeWidget(id);
-    removeWidgetTodos(id);
+    if (onRemove) {
+      onRemove(id);
+    } else {
+      removeWidget(id);
+    }
   };
 
   return (

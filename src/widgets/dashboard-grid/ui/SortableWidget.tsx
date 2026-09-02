@@ -2,20 +2,28 @@
 
 import { Widget } from "@/entities/widget/model/types";
 import { WidgetFrame } from "@/entities/widget/ui/WidgetFrame";
-import { ClockWidget } from "@/features/clock-widget/ui/ClockWidget";
-import { DDayWidget } from "@/features/dday-widget/ui/DDayWidget";
-import { MemoWidget } from "@/features/memo-widget/ui/MemoWidget";
-import { TodoWidget } from "@/features/todo-widget";
 import { cn } from "@/shared/lib/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "framer-motion";
+import { useDashboardStore } from "../model/useDashboardStore";
+import { useTodoStore } from "@/features/todo-widget/model/useTodoStore";
+import { useMemoStore } from "@/features/memo-widget/model/useMemoStore";
+import { useDDayStore } from "@/features/dday-widget/model/useDDayStore";
+import { WidgetContentRenderer } from "./WidgetContentRenderer";
+import { useClockStore } from "@/features/clock-widget/model/useClockStore";
 
 interface SortableWidgetProps {
   widget: Widget;
 }
 
 export const SortableWidget = ({ widget }: SortableWidgetProps) => {
+  const removeWidget = useDashboardStore((s) => s.removeWidget);
+  const removeWidgetTodos = useTodoStore((s) => s.removeWidgetTodos);
+  const removeWidgetMemo = useMemoStore((s) => s.removeWidgetMemo);
+  const removeWidgetDDays = useDDayStore((s) => s.removeWidgetDDays);
+  const removeWidgetClock = useClockStore((s) => s.removeWidgetClock);
+
   const {
     attributes,
     listeners,
@@ -37,21 +45,12 @@ export const SortableWidget = ({ widget }: SortableWidgetProps) => {
       ? "col-span-1 md:col-span-2 md:row-span-2"
       : "col-span-1";
 
-  const isExpanded = widget.layout.w === 2;
-
-  const renderWidgetContent = () => {
-    switch (widget.type) {
-      case "todo":
-        return <TodoWidget widgetId={widget.id} isExpanded={isExpanded} />;
-      case "clock":
-        return <ClockWidget widgetId={widget.id} isExpanded={isExpanded} />;
-      case "dday":
-        return <DDayWidget widgetId={widget.id} isExpanded={isExpanded} />;
-      case "memo":
-        return <MemoWidget widgetId={widget.id} isExpanded={isExpanded} />;
-      default:
-        return <div>알 수 없는 위젯 타입입니다.</div>;
-    }
+  const handleRemove = (id: string) => {
+    removeWidget(id);
+    removeWidgetTodos(id);
+    removeWidgetMemo(id);
+    removeWidgetDDays(id);
+    removeWidgetClock(id);
   };
 
   return (
@@ -73,8 +72,9 @@ export const SortableWidget = ({ widget }: SortableWidgetProps) => {
         color={widget.color}
         width={widget.layout.w}
         dragHandleProps={{ attributes, listeners }}
+        onRemove={handleRemove}
       >
-        {renderWidgetContent()}
+        <WidgetContentRenderer widget={widget} />
       </WidgetFrame>
     </motion.div>
   );
