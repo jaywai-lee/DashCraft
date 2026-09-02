@@ -20,8 +20,8 @@ export const TimerPhaseSelector = ({
         type="button"
         onClick={() => onSwitchPhase("work")}
         className={cn(
-          "rounded-full font-semibold transition-all cursor-pointer",
-          isExpanded ? "px-4 py-1.5 text-sm" : "px-2.5 py-1 text-xs",
+          "rounded-full font-semibold transition-all cursor-pointer px-2.5 py-1 text-xs",
+          isExpanded && "sm:px-4 sm:py-1.5 sm:text-sm",
           timerPhase === "work"
             ? "bg-primary text-primary-foreground shadow-2xs"
             : "bg-muted text-muted-foreground hover:text-foreground",
@@ -33,8 +33,8 @@ export const TimerPhaseSelector = ({
         type="button"
         onClick={() => onSwitchPhase("break")}
         className={cn(
-          "rounded-full font-semibold transition-all cursor-pointer",
-          isExpanded ? "px-4 py-1.5 text-sm" : "px-2.5 py-1 text-xs",
+          "rounded-full font-semibold transition-all cursor-pointer px-2.5 py-1 text-xs",
+          isExpanded && "sm:px-4 sm:py-1.5 sm:text-sm",
           timerPhase === "break"
             ? "bg-emerald-600 text-white shadow-2xs"
             : "bg-muted text-muted-foreground hover:text-foreground",

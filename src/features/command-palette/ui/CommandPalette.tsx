@@ -4,24 +4,13 @@ import { useDashboardStore } from "@/widgets/dashboard-grid/model/useDashboardSt
 import { useCommandPalette } from "../model/useCommandPalette";
 import { useFilterStore } from "@/features/dashboard-filter/model/useFilterStore";
 import { useEffect, useState } from "react";
-import { WidgetType } from "@/widgets/dashboard-grid/config/widgets.config";
-import { Command } from "cmdk";
 import {
-  Calendar,
-  CheckSquare,
-  Clock,
-  FileText,
-  Filter,
-  Plus,
-  Search,
-} from "lucide-react";
-
-const WIDGET_DEFAULT_TITLES: Record<WidgetType, string> = {
-  todo: "할 일 목록",
-  memo: "메모",
-  clock: "시계",
-  dday: "D-Day",
-};
+  WIDGET_CONFIG_MAP,
+  WIDGET_OPTIONS,
+  WidgetType,
+} from "@/widgets/dashboard-grid/config/widgets.config";
+import { Command } from "cmdk";
+import { Filter, Plus, Search } from "lucide-react";
 
 export const CommandPalette = () => {
   const { isOpen, setIsOpen } = useCommandPalette();
@@ -41,9 +30,10 @@ export const CommandPalette = () => {
   };
 
   const handleAddWidget = (type: WidgetType) => {
+    const config = WIDGET_CONFIG_MAP[type];
     addWidget({
       type,
-      title: WIDGET_DEFAULT_TITLES[type] || "새 위젯",
+      title: config?.title || "새 위젯",
       color: "default",
       layout: {
         id: "",
@@ -125,38 +115,21 @@ export const CommandPalette = () => {
               heading="새 위젯 추가"
               className="px-2 py-1.5 text-xs text-muted-foreground font-semibold"
             >
-              <Command.Item
-                onSelect={() => handleAddWidget("todo")}
-                className="flex items-center gap-2 px-2 py-2 rounded-md text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent"
-              >
-                <CheckSquare className="w-4 h-4 text-blue-500" />
-                <span>할 일 목록(Todo) 위젯 추가</span>
-                <Plus className="w-3.5 h-3.5 ml-auto opacity-50" />
-              </Command.Item>
-              <Command.Item
-                onSelect={() => handleAddWidget("memo")}
-                className="flex items-center gap-2 px-2 py-2 rounded-md text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent"
-              >
-                <FileText className="w-4 h-4 text-emerald-500" />
-                <span>메모 위젯 추가</span>
-                <Plus className="w-3.5 h-3.5 ml-auto opacity-50" />
-              </Command.Item>
-              <Command.Item
-                onSelect={() => handleAddWidget("clock")}
-                className="flex items-center gap-2 px-2 py-2 rounded-md text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent"
-              >
-                <Clock className="w-4 h-4 text-purple-500" />
-                <span>시계 위젯 추가</span>
-                <Plus className="w-3.5 h-3.5 ml-auto opacity-50" />
-              </Command.Item>
-              <Command.Item
-                onSelect={() => handleAddWidget("dday")}
-                className="flex items-center gap-2 px-2 py-2 rounded-md text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent"
-              >
-                <Calendar className="w-4 h-4 text-rose-500" />
-                <span>D-Day 위젯 추가</span>
-                <Plus className="w-3.5 h-3.5 ml-auto opacity-50" />
-              </Command.Item>
+              {WIDGET_OPTIONS.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Command.Item
+                    key={item.type}
+                    value={`add-${item.type}-${item.title}`}
+                    onSelect={() => handleAddWidget(item.type)}
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-md text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent transition-colors"
+                  >
+                    <Icon className="w-4 h-4 text-primary shrink-0" />
+                    <span>{item.title}</span>
+                    <Plus className="w-3.5 h-3.5 ml-auto opacity-50" />
+                  </Command.Item>
+                );
+              })}
             </Command.Group>
 
             <Command.Group
@@ -170,13 +143,21 @@ export const CommandPalette = () => {
                 <Filter className="w-4 h-4 text-muted-foreground" />
                 <span>모든 위젯 보기</span>
               </Command.Item>
-              <Command.Item
-                onSelect={() => handleFilter("todo")}
-                className="flex items-center gap-2 px-2 py-2 rounded-md text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent"
-              >
-                <CheckSquare className="w-4 h-4 text-blue-500" />
-                <span>Todo 위젯만 보기</span>
-              </Command.Item>
+
+              {WIDGET_OPTIONS.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Command.Item
+                    key={`filter-${item.type}`}
+                    value={`filter-${item.type}-${item.title}`}
+                    onSelect={() => handleFilter(item.type)}
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-md text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent transition-colors"
+                  >
+                    <Icon className="w-4 h-4 text-primary shrink-0" />
+                    <span>{item.title} 위젯만 보기</span>
+                  </Command.Item>
+                );
+              })}
             </Command.Group>
           </Command.List>
         </Command>

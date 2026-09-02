@@ -12,11 +12,15 @@ export const useCommandPalette = () => {
         e.preventDefault();
         toggle();
       }
+
+      if (e.key === "Escape" && isOpen) {
+        setIsOpen(false);
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggle]);
+  }, [isOpen, toggle, setIsOpen]);
 
   return { isOpen, setIsOpen, toggle };
 };

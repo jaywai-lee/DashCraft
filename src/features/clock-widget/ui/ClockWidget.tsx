@@ -19,35 +19,39 @@ export const ClockWidget = memo(
     const mode = useClockStore((s) => s.states[widgetId]?.mode ?? "clock");
 
     return (
-      <div className="flex flex-col h-full justify-center items-center relative py-2">
+      <div className="flex flex-col h-full items-center justify-center relative py-2 px-1">
         <div
           className={cn(
-            "flex items-center justify-center gap-1 bg-muted/50 p-1 rounded-xl border shrink-0 transition-all",
-            isExpanded ? "absolute top-2 gap-2 p-1.5" : "mb-auto",
+            "flex items-center justify-center gap-1 bg-muted/50 p-1 rounded-xl border shrink-0 transition-all mb-2",
+            isExpanded && "mb-3 sm:mb-4 sm:p-1.5",
           )}
         >
           <Button
             variant={mode === "clock" ? "primary" : "ghost"}
-            size={isExpanded ? "md" : "sm"}
+            size="sm"
             onClick={() => setMode(widgetId, "clock")}
             className={cn(
-              "h-7 px-3 text-xs gap-1.5",
-              isExpanded && "h-9 px-4 text-sm",
+              "h-7 px-2.5 text-xs gap-1",
+              isExpanded && "sm:h-9 sm:px-4 sm:text-sm sm:gap-1.5",
             )}
           >
-            <Clock className={cn("w-3.5 h-3.5", isExpanded && "w-4 h-4")} />
+            <Clock
+              className={cn("w-3.5 h-3.5", isExpanded && "sm:w-4 sm:h-4")}
+            />
             <span>시계</span>
           </Button>
           <Button
             variant={mode === "timer" ? "primary" : "ghost"}
-            size={isExpanded ? "md" : "sm"}
+            size="sm"
             onClick={() => setMode(widgetId, "timer")}
             className={cn(
-              "h-7 px-3 text-xs gap-1.5",
-              isExpanded && "h-9 px-4 text-sm",
+              "h-7 px-2.5 text-xs gap-1",
+              isExpanded && "sm:h-9 sm:px-4 sm:text-sm sm:gap-1.5",
             )}
           >
-            <Timer className={cn("w-3.5 h-3.5", isExpanded && "w-4 h-4")} />
+            <Timer
+              className={cn("w-3.5 h-3.5", isExpanded && "sm:w-4 sm:h-4")}
+            />
             <span>뽀모도로</span>
           </Button>
         </div>

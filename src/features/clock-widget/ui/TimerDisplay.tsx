@@ -28,8 +28,8 @@ export const TimerDisplay = ({ widgetId, isExpanded }: TimerDisplayProps) => {
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center my-auto select-none transition-all",
-        isExpanded ? "space-y-6" : "space-y-3",
+        "flex flex-col items-center justify-between my-auto select-none transition-all w-full h-full pt-1 pb-0.5",
+        isExpanded ? "space-y-6" : "space-y-2",
       )}
     >
       <TimerPhaseSelector
@@ -40,8 +40,8 @@ export const TimerDisplay = ({ widgetId, isExpanded }: TimerDisplayProps) => {
 
       <p
         className={cn(
-          "font-black tracking-tight tabular-nums text-foreground drop-shadow-sm transition-all",
-          isExpanded ? "text-7xl sm:text-8xl" : "text-4xl sm:text-5xl",
+          "font-black tracking-tight tabular-nums text-foreground drop-shadow-xs transition-all my-auto",
+          isExpanded ? "text-7xl sm:text-8xl" : "text-4xl sm:text-[46px]",
         )}
       >
         {formatSecondsToMMSS(timeLeft)}
