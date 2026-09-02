@@ -21,6 +21,7 @@ export const TodoStatusFilterGroup = ({
       {STATUS_OPTIONS.map((item) => (
         <button
           key={item.id}
+          type="button"
           onClick={() => onSelect(item.id)}
           className={cn(
             "px-2.5 py-1 rounded-md transition-colors shrink-0 whitespace-nowrap",

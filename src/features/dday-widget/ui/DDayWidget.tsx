@@ -7,6 +7,7 @@ import { Calendar } from "lucide-react";
 import { DDayItemCard } from "./DDayItemCard";
 import { useEffect, useMemo, useState } from "react";
 import { useFilterStore } from "@/features/dashboard-filter/model/useFilterStore";
+import { calculateDDay } from "@/shared/lib/formatters";
 
 interface DDayWidgetProps {
   widgetId: string;
@@ -22,11 +23,24 @@ export const DDayWidget = ({
   const { searchQuery } = useFilterStore();
   const ddays = getWidgetDDays(widgetId);
 
-  const filteredDDays = useMemo(() => {
-    if (!searchQuery.trim()) return ddays;
+  const filteredAndSortedDDays = useMemo(() => {
+    let result = [...ddays];
 
-    const query = searchQuery.toLowerCase();
-    return ddays.filter((item) => item.title.toLowerCase().includes(query));
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter((item) =>
+        item.title.toLowerCase().includes(query),
+      );
+    }
+
+    return result.sort((a, b) => {
+      const diffA = calculateDDay(a.targetDate);
+      const diffB = calculateDDay(b.targetDate);
+
+      if (diffA >= 0 && diffB < 0) return -1;
+      if (diffA < 0 && diffB >= 0) return 1;
+      return diffA - diffB;
+    });
   }, [ddays, searchQuery]);
 
   useEffect(() => {
@@ -45,7 +59,7 @@ export const DDayWidget = ({
     <div className="flex flex-col h-full">
       <DDayForm onAdd={(title, date) => addDDay(widgetId, title, date)} />
 
-      {filteredDDays.length === 0 ? (
+      {filteredAndSortedDDays.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground text-xs gap-2 py-8">
           <Calendar
             className={cn(
@@ -64,13 +78,13 @@ export const DDayWidget = ({
           className={cn(
             "flex-1 overflow-y-auto pr-1 gap-3",
             isExpanded
-              ? filteredDDays.length === 1
+              ? filteredAndSortedDDays.length === 1
                 ? "flex flex-col space-y-2"
                 : "grid grid-cols-1 sm:grid-cols-2 auto-rows-max align-start"
               : "flex flex-col space-y-2",
           )}
         >
-          {filteredDDays.map((item) => (
+          {filteredAndSortedDDays.map((item) => (
             <DDayItemCard
               key={item.id}
               item={item}
