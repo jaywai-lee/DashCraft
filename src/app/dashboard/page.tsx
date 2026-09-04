@@ -21,6 +21,7 @@ import {
 import { useDashboardStore } from "@/widgets/dashboard-grid/model/useDashboardStore";
 import { DashboardGrid } from "@/widgets/dashboard-grid/ui/DashboardGrid";
 import {
+  CalendarIcon,
   CheckSquare,
   ChevronDown,
   LayoutGrid,
@@ -81,6 +82,18 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 w-full sm:w-auto pt-1.5 sm:pt-0 border-t sm:border-t-0 border-border/40">
+          <Link href="/calendar" className="flex-1 sm:flex-initial">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-8 px-2.5 sm:px-3 text-xs gap-1.5 cursor-pointer"
+              title="일정 캘린더 보기"
+            >
+              <CalendarIcon className="w-3.5 h-3.5 text-primary" />
+              <span>캘린더</span>
+            </Button>
+          </Link>
+
           <Button
             variant={isOpen ? "primary" : "outline"}
             size="sm"
