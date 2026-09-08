@@ -41,7 +41,7 @@ export const CalendarGrid = ({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y border-b">
+      <div className="grid grid-cols-7 auto-rows-fr border-t border-l border-border/60">
         {calendarDays.map(({ date, isCurrentMonth }, idx) => {
           const dateStr = formatDateToYYYYMMDD(date);
           const daySchedules = schedules[dateStr] || [];
@@ -58,7 +58,7 @@ export const CalendarGrid = ({
               key={dateStr + idx}
               onClick={() => onOpenModal(dateStr)}
               className={cn(
-                "min-h-[72px] sm:min-h-[110px] p-1 sm:p-1.5 flex flex-col justify-between transition-colors cursor-pointer hover:bg-accent/30 active:bg-accent/50",
+                "min-h-[72px] sm:min-h-[110px] p-1 sm:p-1.5 flex flex-col justify-between transition-colors cursor-pointer hover:bg-accent/30 active:bg-accent/50 border-r border-b border-border/60",
                 !isCurrentMonth && "bg-muted/10 opacity-40",
               )}
             >

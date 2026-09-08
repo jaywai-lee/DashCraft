@@ -41,10 +41,17 @@ export const DashboardGrid = () => {
     setIsMounted(true);
   }, []);
 
-  if (!isMounted) return <DashboardGridSkeleton />;
-  if (localWidgets.length === 0) return <DashboardEmpty />;
-  if (filteredLocalWidgets.length === 0)
+  if (!isMounted) {
+    return <DashboardGridSkeleton count={5} />;
+  }
+
+  if (localWidgets.length === 0) {
+    return <DashboardEmpty />;
+  }
+
+  if (filteredLocalWidgets.length === 0) {
     return <DashboardSearchEmpty onResetFilter={resetFilter} />;
+  }
 
   return (
     <DndContext

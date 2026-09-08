@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   DragEndEvent,
   DragOverEvent,
@@ -21,17 +21,14 @@ const RESET_INTERVAL_MS = 400;
 
 export const useDashboardDnD = () => {
   const { widgets, setWidgets } = useDashboardStore();
-  const [localWidgets, setLocalWidgets] = useState<Widget[]>(widgets);
+  const [draggedWidgets, setDraggedWidgets] = useState<Widget[] | null>(null);
   const [activeWidget, setActiveWidget] = useState<Widget | null>(null);
 
   const lastOverIdRef = useRef<string | number | null>(null);
-
   const swapCountRef = useRef<number>(0);
   const lastResetTimeRef = useRef<number>(Date.now());
 
-  useEffect(() => {
-    setLocalWidgets(widgets);
-  }, [widgets]);
+  const localWidgets = draggedWidgets ?? widgets;
 
   const pointerSensor = useSensor(PointerSensor, {
     activationConstraint: { distance: 5 },
@@ -51,6 +48,7 @@ export const useDashboardDnD = () => {
     const foundWidget = localWidgets.find((w) => w.id === active.id);
     if (foundWidget) {
       setActiveWidget(foundWidget);
+      setDraggedWidgets(widgets);
       lastOverIdRef.current = active.id;
       swapCountRef.current = 0;
       lastResetTimeRef.current = Date.now();
@@ -60,7 +58,6 @@ export const useDashboardDnD = () => {
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-
     if (lastOverIdRef.current === over.id) return;
 
     const now = Date.now();
@@ -84,7 +81,7 @@ export const useDashboardDnD = () => {
 
     if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
       lastOverIdRef.current = over.id;
-      setLocalWidgets((prev) => arrayMove(prev, oldIndex, newIndex));
+      setDraggedWidgets(arrayMove(localWidgets, oldIndex, newIndex));
     }
   };
 
@@ -105,13 +102,14 @@ export const useDashboardDnD = () => {
       setWidgets(localWidgets);
     }
 
+    setDraggedWidgets(null);
     setActiveWidget(null);
     lastOverIdRef.current = null;
     swapCountRef.current = 0;
   };
 
   const handleDragCancel = () => {
-    setLocalWidgets(widgets);
+    setDraggedWidgets(null);
     setActiveWidget(null);
     lastOverIdRef.current = null;
     swapCountRef.current = 0;
