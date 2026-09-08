@@ -4,20 +4,26 @@ import { cn } from "@/shared/lib/utils";
 import { Trash2 } from "lucide-react";
 import { formatDateToYYYYMMDD, generateCalendarDays } from "../lib/dateUtils";
 import { getKoreanHolidayInfo } from "../lib/holidays";
-import { SchedulesMap } from "../model/types";
+import { ScheduleItem, SchedulesMap } from "../model/types";
 import { WEEK_DAYS_MON_FIRST } from "../config/constants";
 
 interface CalendarGridProps {
   currentDate: Date;
   schedules: SchedulesMap;
+  selectedDateStr: string | null;
+  onSelectDate: (dateStr: string) => void;
   onOpenModal: (dateStr: string) => void;
+  onEditSchedule: (dateStr: string, schedule: ScheduleItem) => void;
   onRemoveSchedule: (dateStr: string, id: string) => void;
 }
 
 export const CalendarGrid = ({
   currentDate,
   schedules,
+  selectedDateStr,
+  onSelectDate,
   onOpenModal,
+  onEditSchedule,
   onRemoveSchedule,
 }: CalendarGridProps) => {
   const year = currentDate.getFullYear();
@@ -46,6 +52,7 @@ export const CalendarGrid = ({
           const dateStr = formatDateToYYYYMMDD(date);
           const daySchedules = schedules[dateStr] || [];
           const isToday = dateStr === todayStr;
+          const isSelected = selectedDateStr === dateStr;
 
           const dayOfWeek = date.getDay();
           const isSunday = dayOfWeek === 0;
@@ -56,10 +63,16 @@ export const CalendarGrid = ({
           return (
             <div
               key={dateStr + idx}
-              onClick={() => onOpenModal(dateStr)}
+              onClick={() => {
+                onSelectDate(dateStr);
+                if (window.innerWidth >= 640 && daySchedules.length === 0) {
+                  onOpenModal(dateStr);
+                }
+              }}
               className={cn(
-                "min-h-[72px] sm:min-h-[110px] p-1 sm:p-1.5 flex flex-col justify-between transition-colors cursor-pointer hover:bg-accent/30 active:bg-accent/50 border-r border-b border-border/60",
+                "min-h-[56px] sm:min-h-[110px] p-1 sm:p-1.5 flex flex-col justify-between transition-colors cursor-pointer hover:bg-accent/30 active:bg-accent/50 border-r border-b border-border/60 relative",
                 !isCurrentMonth && "bg-muted/10 opacity-40",
+                isSelected && "bg-primary/5 ring-2 ring-primary ring-inset",
               )}
             >
               <div className="flex items-center justify-between gap-0.5">
@@ -86,16 +99,41 @@ export const CalendarGrid = ({
                 </div>
               </div>
 
-              <div className="space-y-0.5 sm:space-y-1 my-0.5 sm:my-1 flex-1 overflow-y-auto max-h-[48px] sm:max-h-[72px] scrollbar-thin">
+              {daySchedules.length > 0 && (
+                <div className="flex sm:hidden items-center justify-center gap-0.5 mt-auto pb-0.5">
+                  {daySchedules.slice(0, 3).map((item) => (
+                    <span
+                      key={item.id}
+                      className="w-1.5 h-1.5 rounded-full bg-primary"
+                    />
+                  ))}
+                  {daySchedules.length > 3 && (
+                    <span className="text-[8px] font-bold text-muted-foreground leading-none">
+                      +
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="hidden sm:block space-y-1 my-1 flex-1 overflow-y-auto max-h-[72px] scrollbar-thin">
                 {daySchedules.map((item) => (
                   <div
                     key={item.id}
-                    className="text-[9px] sm:text-[11px] bg-primary/10 text-primary border border-primary/20 px-1 py-0.5 rounded truncate font-medium flex items-center justify-between group/item"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditSchedule(dateStr, item);
+                    }}
+                    className="text-[11px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded truncate font-medium flex items-center justify-between group/item hover:bg-primary/20 transition-colors"
                   >
-                    <span className="truncate">
-                      {item.time && `${item.time} `}
-                      {item.title}
-                    </span>
+                    <div className="flex items-center gap-1 min-w-0 truncate">
+                      {item.time && (
+                        <span className="px-1 py-0.2 bg-primary/20 text-primary text-[10px] font-mono font-semibold rounded shrink-0">
+                          {item.time}
+                        </span>
+                      )}
+                      <span className="truncate font-normal">{item.title}</span>
+                    </div>
+
                     <button
                       type="button"
                       onClick={(e) => {
@@ -105,7 +143,7 @@ export const CalendarGrid = ({
                       className="inline-flex text-rose-500 hover:text-rose-700 ml-1 shrink-0 cursor-pointer p-0.5"
                       title="삭제"
                     >
-                      <Trash2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                      <Trash2 className="w-3 h-3" />
                     </button>
                   </div>
                 ))}
