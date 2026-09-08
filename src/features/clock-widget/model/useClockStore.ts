@@ -32,7 +32,7 @@ interface ClockStore {
   removeWidgetClock: (widgetId: string) => void;
 }
 
-const DEFAULT_STATE: ClockWidgetState = {
+export const DEFAULT_STATE: ClockWidgetState = {
   mode: "clock",
   timerPhase: "work",
   timeLeft: 25 * 60,
@@ -110,6 +110,8 @@ export const useClockStore = create<ClockStore>()(
       syncTimeLeft: (widgetId: string, nextTimeLeft: number) =>
         set((state) => {
           const current = state.states[widgetId] || DEFAULT_STATE;
+
+          if (current.timeLeft === nextTimeLeft) return state;
           if (nextTimeLeft <= 0) {
             return {
               states: {

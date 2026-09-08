@@ -1,7 +1,7 @@
 "use client";
 
 import { useDashboardStore } from "@/widgets/dashboard-grid/model/useDashboardStore";
-import React from "react";
+import React, { memo, useCallback } from "react";
 import { WidgetColor } from "../model/types";
 import { cn } from "@/shared/lib/utils";
 import { COLOR_THEMES } from "../model/constants";
@@ -25,73 +25,97 @@ interface WidgetFrameProps {
   onRemove?: (id: string) => void;
 }
 
-export const WidgetFrame = ({
-  id,
-  title,
-  color = "default",
-  width = 1,
-  children,
-  dragHandleProps,
-  onRemove,
-}: WidgetFrameProps) => {
-  const {
-    removeWidget,
-    toggleWidgetWidth,
-    updateWidgetTitle,
-    updateWidgetColor,
-  } = useDashboardStore();
+export const WidgetFrame = memo(
+  ({
+    id,
+    title,
+    color = "default",
+    width = 1,
+    children,
+    dragHandleProps,
+    onRemove,
+  }: WidgetFrameProps) => {
+    const removeWidget = useDashboardStore((s) => s.removeWidget);
+    const toggleWidgetWidth = useDashboardStore((s) => s.toggleWidgetWidth);
+    const updateWidgetTitle = useDashboardStore((s) => s.updateWidgetTitle);
+    const updateWidgetColor = useDashboardStore((s) => s.updateWidgetColor);
 
-  const currentTheme = COLOR_THEMES[color] || COLOR_THEMES.default;
+    const currentTheme = COLOR_THEMES[color] || COLOR_THEMES.default;
 
-  const handleRemove = () => {
-    if (onRemove) {
-      onRemove(id);
-    } else {
-      removeWidget(id);
-    }
-  };
+    const handleRemove = useCallback(() => {
+      if (onRemove) {
+        onRemove(id);
+      } else {
+        removeWidget(id);
+      }
+    }, [id, onRemove, removeWidget]);
 
-  return (
-    <div
-      className={cn(
-        "relative flex flex-col w-full bg-card text-card-foreground rounded-xl border shadow-sm transition-all duration-200",
-        width === 2
-          ? "h-auto min-h-[380px] sm:h-[580px] sm:row-span-2"
-          : "h-auto min-h-[280px] sm:h-[280px]",
-        currentTheme.border,
-      )}
-    >
-      <div className={cn("h-1 w-full shrink-0", currentTheme.accentBg)} />
+    const handleUpdateTitle = useCallback(
+      (newTitle: string) => {
+        updateWidgetTitle(id, newTitle);
+      },
+      [id, updateWidgetTitle],
+    );
 
+    const handleSelectColor = useCallback(
+      (newColor: WidgetColor) => {
+        updateWidgetColor(id, newColor);
+      },
+      [id, updateWidgetColor],
+    );
+
+    const handleToggleWidth = useCallback(() => {
+      toggleWidgetWidth(id);
+    }, [id, toggleWidgetWidth]);
+
+    return (
       <div
-        {...dragHandleProps?.attributes}
-        {...dragHandleProps?.listeners}
         className={cn(
-          "flex items-center justify-between px-4 py-2 bg-muted/50 border-b cursor-grab active:cursor-grabbing select-none h-11 transition-colors touch-pan-y",
-          currentTheme.bg,
+          "relative flex flex-col w-full bg-card text-card-foreground rounded-xl border shadow-sm transition-all duration-200",
+          width === 2
+            ? "h-auto min-h-[380px] sm:h-[580px] sm:row-span-2"
+            : "h-auto min-h-[280px] sm:h-[280px]",
+          currentTheme.border,
         )}
       >
-        <div className="flex items-center gap-1.5 flex-1 mr-2 overflow-hidden">
-          <WidgetTitleInput
-            title={title}
-            onUpdateTitle={(newTitle) => updateWidgetTitle(id, newTitle)}
-          />
+        <div className={cn("h-1 w-full shrink-0", currentTheme.accentBg)} />
+
+        <div
+          {...dragHandleProps?.attributes}
+          {...dragHandleProps?.listeners}
+          className={cn(
+            "flex items-center justify-between px-4 py-2 bg-muted/50 border-b cursor-grab active:cursor-grabbing select-none h-11 transition-colors touch-pan-y",
+            currentTheme.bg,
+          )}
+        >
+          <div className="flex items-center gap-1.5 flex-1 mr-2 overflow-hidden">
+            <WidgetTitleInput title={title} onUpdateTitle={handleUpdateTitle} />
+          </div>
+
+          <div>
+            <WidgetHeaderActions
+              color={color}
+              width={width}
+              onSelectColor={handleSelectColor}
+              onToggleWidth={handleToggleWidth}
+              onRemove={handleRemove}
+            />
+          </div>
         </div>
 
-        <div>
-          <WidgetHeaderActions
-            color={color}
-            width={width}
-            onSelectColor={(newColor) => updateWidgetColor(id, newColor)}
-            onToggleWidth={() => toggleWidgetWidth(id)}
-            onRemove={handleRemove}
-          />
+        <div className="flex-1 p-4 overflow-visible sm:overflow-hidden flex flex-col min-h-0">
+          {children}
         </div>
       </div>
+    );
+  },
+  (prev, next) =>
+    prev.id === next.id &&
+    prev.title === next.title &&
+    prev.color === next.color &&
+    prev.width === next.width &&
+    prev.dragHandleProps?.attributes === next.dragHandleProps?.attributes &&
+    prev.dragHandleProps?.listeners === next.dragHandleProps?.listeners,
+);
 
-      <div className="flex-1 p-4 overflow-visible sm:overflow-hidden flex flex-col min-h-0">
-        {children}
-      </div>
-    </div>
-  );
-};
+WidgetFrame.displayName = "WidgetFrame";

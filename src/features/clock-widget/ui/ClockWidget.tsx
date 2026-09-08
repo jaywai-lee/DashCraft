@@ -15,8 +15,8 @@ interface ClockWidgetProps {
 
 export const ClockWidget = memo(
   ({ widgetId, isExpanded = false }: ClockWidgetProps) => {
-    const setMode = useClockStore((s) => s.setMode);
     const mode = useClockStore((s) => s.states[widgetId]?.mode ?? "clock");
+    const setMode = useClockStore((s) => s.setMode);
 
     return (
       <div className="flex flex-col h-full items-center justify-center relative py-2 px-1">
@@ -66,6 +66,9 @@ export const ClockWidget = memo(
       </div>
     );
   },
+  (prevProps, nextProps) =>
+    prevProps.widgetId === nextProps.widgetId &&
+    prevProps.isExpanded === nextProps.isExpanded,
 );
 
 ClockWidget.displayName = "ClockWidget";

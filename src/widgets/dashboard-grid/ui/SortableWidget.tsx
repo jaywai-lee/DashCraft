@@ -12,12 +12,13 @@ import { useMemoStore } from "@/features/memo-widget/model/useMemoStore";
 import { useDDayStore } from "@/features/dday-widget/model/useDDayStore";
 import { WidgetContentRenderer } from "./WidgetContentRenderer";
 import { useClockStore } from "@/features/clock-widget/model/useClockStore";
+import { memo, useCallback, useMemo } from "react";
 
 interface SortableWidgetProps {
   widget: Widget;
 }
 
-export const SortableWidget = ({ widget }: SortableWidgetProps) => {
+export const SortableWidget = memo(({ widget }: SortableWidgetProps) => {
   const removeWidget = useDashboardStore((s) => s.removeWidget);
   const removeWidgetTodos = useTodoStore((s) => s.removeWidgetTodos);
   const removeWidgetMemo = useMemoStore((s) => s.removeWidgetMemo);
@@ -45,13 +46,27 @@ export const SortableWidget = ({ widget }: SortableWidgetProps) => {
       ? "col-span-1 row-span-2 md:col-span-2"
       : "col-span-1";
 
-  const handleRemove = (id: string) => {
-    removeWidget(id);
-    removeWidgetTodos(id);
-    removeWidgetMemo(id);
-    removeWidgetDDays(id);
-    removeWidgetClock(id);
-  };
+  const handleRemove = useCallback(
+    (id: string) => {
+      removeWidget(id);
+      removeWidgetTodos(id);
+      removeWidgetMemo(id);
+      removeWidgetDDays(id);
+      removeWidgetClock(id);
+    },
+    [
+      removeWidget,
+      removeWidgetTodos,
+      removeWidgetMemo,
+      removeWidgetDDays,
+      removeWidgetClock,
+    ],
+  );
+
+  const dragHandleProps = useMemo(
+    () => ({ attributes, listeners }),
+    [attributes, listeners],
+  );
 
   return (
     <motion.div
@@ -71,11 +86,13 @@ export const SortableWidget = ({ widget }: SortableWidgetProps) => {
         title={widget.title}
         color={widget.color}
         width={widget.layout.w}
-        dragHandleProps={{ attributes, listeners }}
+        dragHandleProps={dragHandleProps}
         onRemove={handleRemove}
       >
         <WidgetContentRenderer widget={widget} />
       </WidgetFrame>
     </motion.div>
   );
-};
+});
+
+SortableWidget.displayName = "SortableWidget";

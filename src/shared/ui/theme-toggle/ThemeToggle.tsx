@@ -1,11 +1,11 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Button } from "../button";
 import { Moon, Sun } from "lucide-react";
 
-export const ThemeToggle = () => {
+export const ThemeToggle = memo(() => {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -36,4 +36,6 @@ export const ThemeToggle = () => {
       )}
     </Button>
   );
-};
+});
+
+ThemeToggle.displayName = "ThemeToggle";
