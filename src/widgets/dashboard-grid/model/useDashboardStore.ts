@@ -12,6 +12,8 @@ interface DashboardState {
   updateWidgetTitle: (id: string, title: string) => void;
   updateWidgetColor: (id: string, color: WidgetColor) => void;
   resetDashboard: () => void;
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
 }
 
 const INITIAL_WIDGETS: Widget[] = [];
@@ -20,6 +22,8 @@ export const useDashboardStore = create<DashboardState>()(
   persist(
     (set) => ({
       widgets: INITIAL_WIDGETS,
+      _hasHydrated: false,
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
 
       addWidget: (newWidgetData) =>
         set((state) => {
@@ -82,6 +86,9 @@ export const useDashboardStore = create<DashboardState>()(
 
     {
       name: "dashcraft-storage",
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     },
   ),
 );

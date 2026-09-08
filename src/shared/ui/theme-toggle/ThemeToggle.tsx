@@ -15,7 +15,14 @@ export const ThemeToggle = memo(() => {
 
   if (!mounted) {
     return (
-      <div className="w-[72px] h-9 rounded-lg border bg-muted/40 animate-pulse shrink-0" />
+      <Button
+        variant="outline"
+        size="md"
+        className="w-9 h-9 p-0 rounded-lg opacity-50 pointer-events-none"
+        aria-hidden="true"
+      >
+        <Sun className="w-4 h-4 text-muted-foreground" />
+      </Button>
     );
   }
 

@@ -87,7 +87,7 @@ export const DashboardHeader = memo(
               title="일정 캘린더 보기"
             >
               <CalendarIcon className="w-3.5 h-3.5 text-primary" />
-              <span>캘린더</span>
+              <span className="hidden sm:inline">캘린더</span>
             </Button>
           </Link>
 
@@ -99,7 +99,7 @@ export const DashboardHeader = memo(
             title="검색 및 필터 (Cmd+K / Ctrl+K)"
           >
             <Search className="w-3.5 h-3.5" />
-            <span>검색 & 필터</span>
+            <span className="hidden sm:inline">검색 & 필터</span>
             <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground ml-1">
               <span className="text-[9px]">⌘</span>K
             </kbd>
