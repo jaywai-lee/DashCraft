@@ -5,6 +5,12 @@ import { persist } from "zustand/middleware";
 interface ScheduleState {
   schedules: SchedulesMap;
   addSchedule: (dateStr: string, title: string, time?: string) => void;
+  updateSchedule: (
+    dateStr: string,
+    id: string,
+    title: string,
+    time?: string,
+  ) => void;
   removeSchedule: (dateStr: string, id: string) => void;
 }
 
@@ -25,6 +31,19 @@ export const useScheduleStore = create<ScheduleState>()(
             schedules: {
               ...state.schedules,
               [dateStr]: [...current, newItem],
+            },
+          };
+        }),
+
+      updateSchedule: (dateStr, id, title, time) =>
+        set((state) => {
+          const current = state.schedules[dateStr] || [];
+          return {
+            schedules: {
+              ...state.schedules,
+              [dateStr]: current.map((item) =>
+                item.id === id ? { ...item, title: title.trim(), time } : item,
+              ),
             },
           };
         }),

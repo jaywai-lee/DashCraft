@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 export const HOURS = Array.from({ length: 12 }, (_, i) =>
   String(i + 1).padStart(2, "0"),
@@ -38,12 +38,40 @@ export const useTimePicker = () => {
     return `${String(h).padStart(2, "0")}:${minute}`;
   };
 
-  const resetTimePicker = () => {
+  const setTimeFromString = useCallback((timeStr?: string) => {
+    if (!timeStr) {
+      setIsAllDay(true);
+      return;
+    }
+
+    const [hStr, mStr] = timeStr.split(":");
+    let h = parseInt(hStr, 10);
+
+    if (isNaN(h)) {
+      setIsAllDay(true);
+      return;
+    }
+
+    setIsAllDay(false);
+
+    if (h >= 12) {
+      setAmpm("오후");
+      if (h > 12) h -= 12;
+    } else {
+      setAmpm("오전");
+      if (h === 0) h = 12;
+    }
+
+    setHour(String(h).padStart(2, "0"));
+    setMinute(mStr || "00");
+  }, []);
+
+  const resetTimePicker = useCallback(() => {
     setIsAllDay(true);
     setAmpm("오전");
     setHour("09");
     setMinute("00");
-  };
+  }, []);
 
   return {
     isAllDay,
@@ -55,6 +83,7 @@ export const useTimePicker = () => {
     setMinute,
     toggleAllDay,
     getTimeString,
+    setTimeFromString,
     resetTimePicker,
   };
 };

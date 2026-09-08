@@ -2,21 +2,31 @@
 
 import { Button } from "@/shared/ui/button";
 import { Modal } from "@/shared/ui/modal";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { HOURS, MINUTES, useTimePicker } from "../model/useTimePicker";
+import { ScheduleItem } from "../model/types";
 
 interface ScheduleModalProps {
   isOpen: boolean;
   dateStr: string | null;
+  editingSchedule?: ScheduleItem | null;
   onClose: () => void;
   onAddSchedule: (dateStr: string, title: string, time?: string) => void;
+  onUpdateSchedule?: (
+    dateStr: string,
+    id: string,
+    title: string,
+    time?: string,
+  ) => void;
 }
 
 export const ScheduleModal = ({
   isOpen,
   dateStr,
+  editingSchedule,
   onClose,
   onAddSchedule,
+  onUpdateSchedule,
 }: ScheduleModalProps) => {
   const [title, setTitle] = useState("");
   const {
@@ -29,15 +39,35 @@ export const ScheduleModal = ({
     setMinute,
     toggleAllDay,
     getTimeString,
+    setTimeFromString,
     resetTimePicker,
   } = useTimePicker();
+
+  const isEditMode = Boolean(editingSchedule);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (editingSchedule) {
+        setTitle(editingSchedule.title);
+        setTimeFromString(editingSchedule.time);
+      } else {
+        setTitle("");
+        resetTimePicker();
+      }
+    }
+  }, [isOpen, editingSchedule, resetTimePicker, setTimeFromString]);
 
   const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!title.trim() || !dateStr) return;
 
     const timeString = getTimeString();
-    onAddSchedule(dateStr, title, timeString);
+
+    if (isEditMode && editingSchedule && onUpdateSchedule) {
+      onUpdateSchedule(dateStr, editingSchedule.id, title, timeString);
+    } else {
+      onAddSchedule(dateStr, title, timeString);
+    }
 
     setTitle("");
     resetTimePicker();
@@ -48,7 +78,11 @@ export const ScheduleModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`일정 추가 (${dateStr ?? ""})`}
+      title={
+        isEditMode
+          ? `일정 수정 (${dateStr ?? ""})`
+          : `일정 추가 (${dateStr ?? ""})`
+      }
       maxWidth="sm"
       footer={
         <div className="flex items-center justify-end gap-2 w-full">
@@ -68,7 +102,7 @@ export const ScheduleModal = ({
             size="sm"
             className="cursor-pointer"
           >
-            저장
+            {isEditMode ? "수정" : "저장"}
           </Button>
         </div>
       }
