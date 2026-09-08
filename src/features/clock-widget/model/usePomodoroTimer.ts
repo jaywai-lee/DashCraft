@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useClockStore } from "./useClockStore";
+import { useCallback, useEffect, useRef } from "react";
+import { DEFAULT_STATE, useClockStore } from "./useClockStore";
 import {
   playCompletionSound,
   requestNotificationPermission,
@@ -12,64 +12,65 @@ import {
 import { toast } from "sonner";
 
 export const usePomodoroTimer = (widgetId: string) => {
-  const {
-    getWidgetState,
-    toggleTimer,
-    resetTimer,
-    syncTimeLeft,
-    switchPhase,
-    toggleSound,
-    toggleNotification,
-  } = useClockStore();
+  const timerPhase = useClockStore(
+    (s) => s.states[widgetId]?.timerPhase ?? DEFAULT_STATE.timerPhase,
+  );
+  const timeLeft = useClockStore(
+    (s) => s.states[widgetId]?.timeLeft ?? DEFAULT_STATE.timeLeft,
+  );
+  const isRunning = useClockStore(
+    (s) => s.states[widgetId]?.isRunning ?? DEFAULT_STATE.isRunning,
+  );
+  const targetEndTime = useClockStore(
+    (s) => s.states[widgetId]?.targetEndTime ?? DEFAULT_STATE.targetEndTime,
+  );
+  const isSoundEnabled = useClockStore(
+    (s) => s.states[widgetId]?.isSoundEnabled ?? DEFAULT_STATE.isSoundEnabled,
+  );
+  const isNotificationEnabled = useClockStore(
+    (s) =>
+      s.states[widgetId]?.isNotificationEnabled ??
+      DEFAULT_STATE.isNotificationEnabled,
+  );
 
-  const state = getWidgetState(widgetId);
-  const {
-    timerPhase,
-    timeLeft,
-    isRunning,
-    targetEndTime,
-    isSoundEnabled = true,
-    isNotificationEnabled = true,
-  } = state;
+  const toggleTimerStore = useClockStore((s) => s.toggleTimer);
+  const resetTimerStore = useClockStore((s) => s.resetTimer);
+  const syncTimeLeft = useClockStore((s) => s.syncTimeLeft);
+  const switchPhaseStore = useClockStore((s) => s.switchPhase);
+  const toggleSoundStore = useClockStore((s) => s.toggleSound);
+  const toggleNotificationStore = useClockStore((s) => s.toggleNotification);
 
   const prevTimeLeftRef = useRef(timeLeft);
 
   useEffect(() => {
-    let timerInterval: NodeJS.Timeout | null = null;
+    if (!isRunning || !targetEndTime) return;
 
-    const updateExactTimeLeft = () => {
-      if (!isRunning || !targetEndTime) return;
-
+    const checkTimerCompletion = () => {
       const now = Date.now();
       const remainingSeconds = Math.max(
         0,
         Math.round((targetEndTime - now) / 1000),
       );
 
-      syncTimeLeft(widgetId, remainingSeconds);
+      if (remainingSeconds <= 0) {
+        syncTimeLeft(widgetId, 0);
+      }
     };
 
-    if (isRunning && targetEndTime) {
-      updateExactTimeLeft();
-      timerInterval = setInterval(() => {
-        updateExactTimeLeft();
-      }, 1000);
+    checkTimerCompletion();
+    const timerInterval = setInterval(checkTimerCompletion, 1000);
 
-      const handleVisibilityChange = () => {
-        if (document.visibilityState === "visible") {
-          updateExactTimeLeft();
-        }
-      };
-      document.addEventListener("visibilitychange", handleVisibilityChange);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkTimerCompletion();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
-      return () => {
-        if (timerInterval) clearInterval(timerInterval);
-        document.removeEventListener(
-          "visibilitychange",
-          handleVisibilityChange,
-        );
-      };
-    }
+    return () => {
+      clearInterval(timerInterval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [isRunning, targetEndTime, widgetId, syncTimeLeft]);
 
   useEffect(() => {
@@ -93,7 +94,7 @@ export const usePomodoroTimer = (widgetId: string) => {
       }
       const nextPhase = timerPhase === "work" ? "break" : "work";
       setTimeout(() => {
-        switchPhase(widgetId, nextPhase);
+        switchPhaseStore(widgetId, nextPhase);
       }, 1000);
     }
     prevTimeLeftRef.current = timeLeft;
@@ -103,7 +104,7 @@ export const usePomodoroTimer = (widgetId: string) => {
     isNotificationEnabled,
     timerPhase,
     widgetId,
-    switchPhase,
+    switchPhaseStore,
   ]);
 
   useEffect(() => {
@@ -114,32 +115,52 @@ export const usePomodoroTimer = (widgetId: string) => {
     }
   }, [isRunning, timerPhase, isSoundEnabled]);
 
-  const handleNotificationToggle = async () => {
+  const handleNotificationToggle = useCallback(async () => {
     if (!isNotificationEnabled) {
       const granted = await requestNotificationPermission();
       if (granted) {
-        toggleNotification(widgetId);
+        toggleNotificationStore(widgetId);
         toast.success("브라우저 알림이 활성화되었습니다.");
       } else {
         toast.warning("브라우저 설정에서 알림 권한을 허용해 주세요.");
       }
     } else {
-      toggleNotification(widgetId);
+      toggleNotificationStore(widgetId);
       toast.info("브라우저 알림이 비활성화되었습니다.");
     }
-  };
+  }, [isNotificationEnabled, toggleNotificationStore, widgetId]);
+
+  const toggleTimer = useCallback(
+    () => toggleTimerStore(widgetId),
+    [toggleTimerStore, widgetId],
+  );
+
+  const resetTimer = useCallback(
+    () => resetTimerStore(widgetId),
+    [resetTimerStore, widgetId],
+  );
+
+  const switchPhase = useCallback(
+    (phase: "work" | "break") => switchPhaseStore(widgetId, phase),
+    [switchPhaseStore, widgetId],
+  );
+
+  const toggleSound = useCallback(
+    () => toggleSoundStore(widgetId),
+    [toggleSoundStore, widgetId],
+  );
 
   return {
-    state,
     timerPhase,
     timeLeft,
     isRunning,
+    targetEndTime,
     isSoundEnabled,
     isNotificationEnabled,
-    toggleTimer: () => toggleTimer(widgetId),
-    resetTimer: () => resetTimer(widgetId),
-    switchPhase: (phase: "work" | "break") => switchPhase(widgetId, phase),
-    toggleSound: () => toggleSound(widgetId),
+    toggleTimer,
+    resetTimer,
+    switchPhase,
+    toggleSound,
     handleNotificationToggle,
   };
 };
