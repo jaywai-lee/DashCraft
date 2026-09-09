@@ -32,7 +32,7 @@ export const CalendarHeader = ({
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between bg-card p-3 sm:p-4 rounded-xl border shadow-xs gap-3">
-      <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground whitespace-nowrap">
+      <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground whitespace-nowrap select-none">
         {year}년 {month}월
       </h1>
 
@@ -98,7 +98,7 @@ export const CalendarHeader = ({
             title="대시보드로 이동"
           >
             <LayoutGrid className="w-3.5 h-3.5 text-primary" />
-            <span>대시보드</span>
+            <span className="hidden sm:inline">대시보드</span>
           </Button>
         </Link>
       </div>

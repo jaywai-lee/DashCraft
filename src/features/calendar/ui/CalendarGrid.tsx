@@ -33,7 +33,7 @@ export const CalendarGrid = ({
 
   return (
     <div className="bg-card rounded-xl border shadow-xs overflow-hidden">
-      <div className="grid grid-cols-7 border-b bg-muted/40 text-center text-[11px] sm:text-xs font-semibold py-2">
+      <div className="grid grid-cols-7 border-b bg-muted/40 text-center text-[11px] sm:text-xs font-semibold py-2 select-none">
         {WEEK_DAYS_MON_FIRST.map((day, idx) => (
           <div
             key={day}
@@ -70,7 +70,7 @@ export const CalendarGrid = ({
                 }
               }}
               className={cn(
-                "min-h-[56px] sm:min-h-[110px] p-1 sm:p-1.5 flex flex-col justify-between transition-colors cursor-pointer hover:bg-accent/30 active:bg-accent/50 border-r border-b border-border/60 relative",
+                "min-h-[56px] sm:min-h-[110px] p-1 sm:p-1.5 flex flex-col justify-between transition-colors select-none cursor-pointer hover:bg-accent/30 active:bg-accent/50 border-r border-b border-border/60 relative",
                 !isCurrentMonth && "bg-muted/10 opacity-40",
                 isSelected && "bg-primary/5 ring-2 ring-primary ring-inset",
               )}

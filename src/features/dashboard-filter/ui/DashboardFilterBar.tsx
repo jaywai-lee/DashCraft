@@ -31,7 +31,7 @@ export const DashboardFilterBar = () => {
     selectedWidgetType === "all" || selectedWidgetType === "todo";
 
   return (
-    <div className="bg-background/95 backdrop-blur border-b p-3 sm:p-4 animate-in slide-in-from-top duration-200">
+    <div className="bg-background/95 backdrop-blur border-b p-3 sm:p-4 animate-in slide-in-from-top duration-200 select-none">
       <div className="max-w-[1800px] mx-auto flex flex-col gap-3">
         <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
 
