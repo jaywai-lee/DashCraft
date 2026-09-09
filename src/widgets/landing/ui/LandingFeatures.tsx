@@ -23,7 +23,7 @@ const FEATURES = [
 
 export const LandingFeatures = () => {
   return (
-    <section className="border-t bg-muted/30 py-20 w-full">
+    <section className="border-t bg-muted/30 py-20 w-full select-none">
       <div className="max-w-5xl mx-auto px-6 space-y-12">
         <div className="text-center space-y-2">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">

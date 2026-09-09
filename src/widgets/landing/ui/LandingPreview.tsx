@@ -2,7 +2,7 @@ import { CheckCircle2 } from "lucide-react";
 
 export const LandingPreview = () => {
   return (
-    <div className="w-full max-w-4xl pb-16">
+    <div className="w-full max-w-4xl pb-16 select-none">
       <div className="p-3 bg-muted/40 rounded-2xl border shadow-2xl backdrop-blur-sm">
         <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4 text-left">
           <div className="flex items-center justify-between border-b pb-3">

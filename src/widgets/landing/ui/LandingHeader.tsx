@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const LandingHeader = () => {
   return (
-    <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-50">
+    <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-50 select-none">
       <div className="max-w-6xl mx-auto px-6 gap-10 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="p-1.5 bg-primary text-primary-foreground rounded-lg">

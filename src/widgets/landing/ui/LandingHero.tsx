@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const LandingHero = () => {
   return (
-    <div className="flex flex-col items-center justify-center text-center space-y-6 pt-16 pb-8">
+    <div className="flex flex-col items-center justify-center text-center space-y-6 pt-16 pb-8 select-none">
       <h1 className="md:text-6xl text-3xl font-extrabold tracking-tight leading-tight max-w-3xl">
         필요한 위젯만 조합해서
         <br /> <span>나만의 대시보드</span>를 <br className="block sm:hidden" />{" "}
