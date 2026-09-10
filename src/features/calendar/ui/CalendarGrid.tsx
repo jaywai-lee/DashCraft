@@ -5,7 +5,9 @@ import { formatDateToYYYYMMDD, generateCalendarDays } from "../lib/dateUtils";
 import { ScheduleItem, SchedulesMap } from "../model/types";
 import { WEEK_DAYS_MON_FIRST } from "../config/constants";
 import { CalendarCell } from "./CalendarCell";
-import { memo } from "react";
+import { memo, useMemo } from "react";
+
+const EMPTY_SCHEDULES: ScheduleItem[] = [];
 
 interface CalendarGridProps {
   currentDate: Date;
@@ -29,7 +31,10 @@ export const CalendarGrid = memo(
   }: CalendarGridProps) => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    const calendarDays = generateCalendarDays(year, month);
+    const calendarDays = useMemo(
+      () => generateCalendarDays(year, month),
+      [year, month],
+    );
     const todayStr = formatDateToYYYYMMDD(new Date());
 
     return (
@@ -49,13 +54,13 @@ export const CalendarGrid = memo(
         </div>
 
         <div className="grid grid-cols-7 auto-rows-fr border-t border-l border-border/60">
-          {calendarDays.map(({ date, isCurrentMonth }, idx) => {
+          {calendarDays.map(({ date, isCurrentMonth }) => {
             const dateStr = formatDateToYYYYMMDD(date);
-            const daySchedules = schedules[dateStr] || [];
+            const daySchedules = schedules[dateStr] || EMPTY_SCHEDULES;
 
             return (
               <CalendarCell
-                key={dateStr + idx}
+                key={dateStr}
                 date={date}
                 dateStr={dateStr}
                 isCurrentMonth={isCurrentMonth}
