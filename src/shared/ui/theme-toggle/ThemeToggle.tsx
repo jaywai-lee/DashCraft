@@ -21,7 +21,7 @@ export const ThemeToggle = memo(() => {
         className="w-9 h-9 p-0 rounded-lg opacity-50 pointer-events-none"
         aria-hidden="true"
       >
-        <Sun className="w-4 h-4 text-muted-foreground" />
+        <div className="w-4 h-4 rounded-full bg-muted-foreground/30 animate-pulse" />
       </Button>
     );
   }
