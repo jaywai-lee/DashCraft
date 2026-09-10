@@ -37,8 +37,6 @@ export const SortableWidget = memo(({ widget }: SortableWidgetProps) => {
   const style = {
     transform: CSS.Translate.toString(transform),
     transition: transition || undefined,
-    opacity: isDragging ? 0.25 : 1,
-    zIndex: isDragging ? 0 : 1,
   };
 
   const colSpanClass =
@@ -79,7 +77,13 @@ export const SortableWidget = memo(({ widget }: SortableWidgetProps) => {
       }}
       ref={setNodeRef}
       style={style}
-      className={cn("h-fit touch-none select-none", colSpanClass)}
+      className={cn(
+        "h-fit touch-none select-none relative transition-all duration-150",
+        isDragging
+          ? "z-0 opacity-25"
+          : "z-10 focus-within:z-[100] hover:z-[50]",
+        colSpanClass,
+      )}
     >
       <WidgetFrame
         id={widget.id}
