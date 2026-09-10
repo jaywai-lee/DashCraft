@@ -1,6 +1,9 @@
 "use client";
 
-import { useFilterStore } from "@/features/dashboard-filter/model/useFilterStore";
+import {
+  selectIsFilterActive,
+  useFilterStore,
+} from "@/features/dashboard-filter/model/useFilterStore";
 import { Button } from "@/shared/ui/button";
 import {
   Dropdown,
@@ -32,17 +35,10 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader = memo(
   ({ onOpenResetModal }: DashboardHeaderProps) => {
-    const addWidget = useDashboardStore((s) => s.addWidget);
+    const addWidget = useDashboardStore.getState().addWidget;
     const toggleFilter = useFilterStore((s) => s.toggleFilter);
     const isOpen = useFilterStore((s) => s.isOpen);
-    const searchQuery = useFilterStore((s) => s.searchQuery);
-    const selectedWidgetType = useFilterStore((s) => s.selectedWidgetType);
-    const todoStatus = useFilterStore((s) => s.todoStatus);
-
-    const isFilterActive =
-      searchQuery !== "" ||
-      selectedWidgetType !== "all" ||
-      todoStatus !== "all";
+    const isFilterActive = useFilterStore(selectIsFilterActive);
 
     const handleAddWidget = useCallback(
       (type: WidgetType) => {
@@ -156,6 +152,8 @@ export const DashboardHeader = memo(
       </header>
     );
   },
+  (prevProps, nextProps) =>
+    prevProps.onOpenResetModal === nextProps.onOpenResetModal,
 );
 
 DashboardHeader.displayName = "DashboardHeader";

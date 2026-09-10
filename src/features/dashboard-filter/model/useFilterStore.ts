@@ -3,6 +3,7 @@ import { create } from "zustand";
 
 export type TodoStatusFilter = "all" | "active" | "completed";
 export type DateRangePreset = "all" | "today" | "week" | "month" | "custom";
+
 interface FilterState {
   isOpen: boolean;
   searchQuery: string;
@@ -52,3 +53,9 @@ export const useFilterStore = create<FilterState>((set) => ({
       endDate: null,
     }),
 }));
+
+export const selectIsFilterActive = (state: FilterState) =>
+  state.searchQuery !== "" ||
+  state.selectedWidgetType !== "all" ||
+  state.todoStatus !== "all" ||
+  state.datePreset !== "all";
