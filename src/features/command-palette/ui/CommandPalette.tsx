@@ -3,7 +3,6 @@
 import { useDashboardStore } from "@/widgets/dashboard-grid/model/useDashboardStore";
 import { useCommandPalette } from "../model/useCommandPalette";
 import { useFilterStore } from "@/features/dashboard-filter/model/useFilterStore";
-import { useEffect, useState } from "react";
 import {
   WIDGET_CONFIG_MAP,
   WIDGET_OPTIONS,
@@ -16,18 +15,8 @@ export const CommandPalette = () => {
   const { isOpen, setIsOpen } = useCommandPalette();
   const { addWidget, widgets } = useDashboardStore();
   const { setSelectedWidgetType, setSearchQuery } = useFilterStore();
-  const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    if (!isOpen) setQuery("");
-  }, [isOpen]);
 
   if (!isOpen) return null;
-
-  const handleQueryChange = (val: string) => {
-    setQuery(val);
-    setSearchQuery(val);
-  };
 
   const handleAddWidget = (type: WidgetType) => {
     const config = WIDGET_CONFIG_MAP[type];
@@ -35,13 +24,7 @@ export const CommandPalette = () => {
       type,
       title: config?.title || "새 위젯",
       color: "default",
-      layout: {
-        id: "",
-        x: 0,
-        y: 0,
-        w: 1,
-        h: 1,
-      },
+      layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
     });
     setIsOpen(false);
   };
@@ -77,8 +60,8 @@ export const CommandPalette = () => {
           <div className="flex items-center border-b px-3">
             <Search className="w-4 h-4 mr-2 shrink-0 opacity-50" />
             <Command.Input
-              value={query}
-              onValueChange={handleQueryChange}
+              autoFocus
+              onValueChange={(val) => setSearchQuery(val)}
               placeholder="위젯 검색, 추가 또는 명령어 입력... (Esc로 닫기)"
               className="flex h-12 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
             />
@@ -97,9 +80,9 @@ export const CommandPalette = () => {
                 {widgets.map((widget) => (
                   <Command.Item
                     key={widget.id}
-                    value={`${widget.title}-${widget.id}`}
+                    value={`widget-${widget.title}-${widget.id}`}
                     onSelect={() => handleFocusWidget(widget.id)}
-                    className="flex items-center gap-2 px-2 py-2 rounded-md text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent"
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-md text-sm cursor-pointer data-[selected='true']:bg-primary/10 data-[selected='true']:text-primary aria-selected:bg-primary/10 aria-selected:text-primary transition-colors"
                   >
                     <Search className="w-4 h-4 text-muted-foreground" />
                     <span>{widget.title}</span>
@@ -122,7 +105,7 @@ export const CommandPalette = () => {
                     key={item.type}
                     value={`add-${item.type}-${item.title}`}
                     onSelect={() => handleAddWidget(item.type)}
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-md text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent transition-colors"
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-md text-sm cursor-pointer data-[selected='true']:bg-primary/10 data-[selected='true']:text-primary aria-selected:bg-primary/10 aria-selected:text-primary transition-colors"
                   >
                     <Icon className="w-4 h-4 text-primary shrink-0" />
                     <span>{item.title}</span>
@@ -137,8 +120,9 @@ export const CommandPalette = () => {
               className="px-2 py-1.5 text-xs text-muted-foreground font-semibold"
             >
               <Command.Item
+                value="filter-all-widgets"
                 onSelect={() => handleFilter("all")}
-                className="flex items-center gap-2 px-2 py-2 rounded-md text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent"
+                className="flex items-center gap-2 px-2.5 py-2 rounded-md text-sm cursor-pointer data-[selected='true']:bg-primary/10 data-[selected='true']:text-primary aria-selected:bg-primary/10 aria-selected:text-primary transition-colors"
               >
                 <Filter className="w-4 h-4 text-muted-foreground" />
                 <span>모든 위젯 보기</span>
@@ -151,7 +135,7 @@ export const CommandPalette = () => {
                     key={`filter-${item.type}`}
                     value={`filter-${item.type}-${item.title}`}
                     onSelect={() => handleFilter(item.type)}
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-md text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground data-[selected=true]:bg-accent transition-colors"
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-md text-sm cursor-pointer data-[selected='true']:bg-primary/10 data-[selected='true']:text-primary aria-selected:bg-primary/10 aria-selected:text-primary transition-colors"
                   >
                     <Icon className="w-4 h-4 text-primary shrink-0" />
                     <span>{item.title} 위젯만 보기</span>

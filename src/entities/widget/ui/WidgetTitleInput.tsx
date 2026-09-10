@@ -47,7 +47,7 @@ export const WidgetTitleInput = memo(
     if (isEditing) {
       return (
         <div
-          className="flex items-center gap-1 w-full max-w-[220px]"
+          className="flex items-center gap-1 w-full"
           onPointerDown={(e) => e.stopPropagation()}
         >
           <input
@@ -73,16 +73,16 @@ export const WidgetTitleInput = memo(
     return (
       <div
         onDoubleClick={handleStartEdit}
-        className="flex items-center gap-1.5 cursor-pointer group truncate max-w-full"
+        className="flex items-center gap-1.5 cursor-pointer group truncate w-full"
         title="더블클릭 또는 연필 버튼으로 이름 변경"
       >
         <h3 className="font-semibold text-sm truncate py-0.5 px-1">{title}</h3>
         <button
           type="button"
           onClick={handleStartEdit}
-          className="p-0.5 hover:bg-accent rounded opacity-0 group-hover:opacity-100 transition-opacity"
+          className="p-0.5 hover:bg-accent rounded opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
         >
-          <Edit2 className="w-3 h-3 text-muted-foreground shrink-0" />
+          <Edit2 className="w-3 h-3 text-muted-foreground" />
         </button>
       </div>
     );

@@ -8,6 +8,7 @@ interface DashboardState {
   removeWidget: (id: string) => void;
   updateLayouts: (layouts: LayoutItem[]) => void;
   setWidgets: (widgets: Widget[]) => void;
+  moveWidget: (id: string, direction: "left" | "right") => void;
   toggleWidgetWidth: (id: string) => void;
   updateWidgetTitle: (id: string, title: string) => void;
   updateWidgetColor: (id: string, color: WidgetColor) => void;
@@ -53,6 +54,21 @@ export const useDashboardStore = create<DashboardState>()(
         })),
 
       setWidgets: (widgets) => set({ widgets }),
+
+      moveWidget: (id, direction) =>
+        set((state) => {
+          const index = state.widgets.findIndex((w) => w.id === id);
+          if (index === -1) return state;
+
+          const newIndex = direction === "left" ? index - 1 : index + 1;
+          if (newIndex < 0 || newIndex >= state.widgets.length) return state;
+
+          const updatedWidgets = [...state.widgets];
+          const [movedWidget] = updatedWidgets.splice(index, 1);
+          updatedWidgets.splice(newIndex, 0, movedWidget);
+
+          return { widgets: updatedWidgets };
+        }),
 
       toggleWidgetWidth: (id: string) =>
         set((state) => ({

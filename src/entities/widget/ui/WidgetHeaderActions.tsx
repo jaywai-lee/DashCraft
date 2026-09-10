@@ -1,12 +1,27 @@
-import { Button } from "@/shared/ui/button";
 import { WidgetColor } from "../model/types";
 import { WidgetColorPicker } from "./WidgetColorPicker";
-import { Maximize2, Minimize2, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Maximize2,
+  Minimize2,
+  MoreVertical,
+  X,
+} from "lucide-react";
 import { memo } from "react";
+import {
+  Dropdown,
+  DropdownContent,
+  DropdownItem,
+  DropdownTrigger,
+} from "@/shared/ui/dropdown/Dropdown";
 
 interface WidgetHeaderActionsProps {
+  id: string;
   color: WidgetColor;
   width?: number;
+  onMoveLeft: (id: string) => void;
+  onMoveRight: (id: string) => void;
   onSelectColor: (color: WidgetColor) => void;
   onToggleWidth: () => void;
   onRemove: () => void;
@@ -14,49 +29,69 @@ interface WidgetHeaderActionsProps {
 
 export const WidgetHeaderActions = memo(
   ({
+    id,
     color,
     width = 1,
+    onMoveLeft,
+    onMoveRight,
     onSelectColor,
     onToggleWidth,
     onRemove,
   }: WidgetHeaderActionsProps) => {
     return (
       <div
-        className="flex items-center gap-1 shrink-0"
+        className="flex items-center gap-1 shrink-0 ml-auto"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <WidgetColorPicker color={color} onSelectColor={onSelectColor} />
 
-        <Button
-          variant="ghost"
-          size="sm"
-          type="button"
-          onClick={onToggleWidth}
-          className="h-7 w-7 p-0 min-w-[28px] text-muted-foreground hover:text-foreground shrink-0"
-          title={width === 1 ? "확대하기 (2x2)" : "축소하기 (1x1)"}
-        >
-          {width === 1 ? (
-            <Maximize2 className="w-3.5 h-3.5" />
-          ) : (
-            <Minimize2 className="w-3.5 h-3.5" />
-          )}
-        </Button>
+        <Dropdown>
+          <DropdownTrigger className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-md transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0">
+            <MoreVertical className="w-3.5 h-3.5" />
+          </DropdownTrigger>
 
-        <Button
-          variant="ghost"
-          size="sm"
+          <DropdownContent align="right" className="w-36">
+            <DropdownItem onClick={onToggleWidth}>
+              {width === 1 ? (
+                <>
+                  <Maximize2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span>2x2로 확대</span>
+                </>
+              ) : (
+                <>
+                  <Minimize2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span>1x1로 축소</span>
+                </>
+              )}
+            </DropdownItem>
+
+            <DropdownItem onClick={() => onMoveLeft(id)}>
+              <ArrowLeft className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <span>왼쪽으로 이동</span>
+            </DropdownItem>
+
+            <DropdownItem onClick={() => onMoveRight(id)}>
+              <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <span>오른쪽으로 이동</span>
+            </DropdownItem>
+          </DropdownContent>
+        </Dropdown>
+
+        <button
           type="button"
           onClick={onRemove}
-          className="h-7 w-7 p-0 min-w-[28px] text-muted-foreground hover:text-foreground shrink-0"
+          className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-destructive/10 hover:text-destructive rounded-md transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
           aria-label="위젯 삭제"
         >
           <X className="w-4 h-4" />
-        </Button>
+        </button>
       </div>
     );
   },
   (prevProps, nextProps) =>
-    prevProps.color === nextProps.color && prevProps.width === nextProps.width,
+    prevProps.id === nextProps.id &&
+    prevProps.color === nextProps.color &&
+    prevProps.width === nextProps.width,
 );
 
 WidgetHeaderActions.displayName = "WidgetHeaderActions";

@@ -5,7 +5,6 @@ import { WidgetColor } from "../model/types";
 import { Palette } from "lucide-react";
 import { COLOR_THEMES } from "../model/constants";
 import { cn } from "@/shared/lib/utils";
-import { Button } from "@/shared/ui/button";
 
 interface WidgetColorPickerProps {
   color: WidgetColor;
@@ -39,20 +38,18 @@ export const WidgetColorPicker = memo(
     }, [isOpen]);
 
     return (
-      <div className="relative">
-        <Button
-          variant="ghost"
-          size="sm"
+      <div ref={containerRef} className="relative flex items-center shrink-0">
+        <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="h-7 w-7 p-0 min-w-[28px] text-muted-foreground hover:text-foreground shrink-0"
+          className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-md transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
           title="위젯 색상 변경"
         >
           <Palette className="w-3.5 h-3.5" />
-        </Button>
+        </button>
 
         {isOpen && (
-          <div className="absolute top-8 right-0 z-50 p-2 bg-popover text-popover-foreground border rounded-xl shadow-xl flex items-center gap-1.5 animate-in zoom-in-95 duration-150">
+          <div className="absolute top-8 right-0 z-[100] p-1.5 bg-popover text-popover-foreground border rounded-xl shadow-xl flex items-center gap-1 animate-in zoom-in-95 duration-150">
             {(
               Object.entries(COLOR_THEMES) as [
                 WidgetColor,
@@ -67,10 +64,10 @@ export const WidgetColorPicker = memo(
                   type="button"
                   onClick={() => handleSelect(themeKey)}
                   className={cn(
-                    "w-5 h-5 rounded-full border border-black/10 dark:border-white/10 transition-transform hover:scale-110 flex items-center justify-center shrink-0",
+                    "w-4 h-4 rounded-full border border-black/10 dark:border-white/10 transition-transform hover:scale-110 flex items-center justify-center shrink-0",
                     COLOR_THEMES[themeKey].accentBg,
                     isSelected
-                      ? "ring-2 ring-foreground ring-offset-2 ring-offset-popover scale-110"
+                      ? "ring-2 ring-foreground ring-offset-1 ring-offset-popover scale-110"
                       : "opacity-80 hover:opacity-100",
                   )}
                   title={themeValue.label}
