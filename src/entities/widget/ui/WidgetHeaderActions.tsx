@@ -80,7 +80,7 @@ export const WidgetHeaderActions = memo(
         <button
           type="button"
           onClick={onRemove}
-          className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-destructive/10 hover:text-destructive rounded-md transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
+          className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-md transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
           aria-label="위젯 삭제"
         >
           <X className="w-4 h-4" />
