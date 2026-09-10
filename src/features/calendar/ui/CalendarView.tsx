@@ -4,10 +4,15 @@ import { useCallback, useEffect, useState } from "react";
 import { useScheduleStore } from "../model/useScheduleStore";
 import { CalendarHeader } from "./CalendarHeader";
 import { CalendarGrid } from "./CalendarGrid";
-import { ScheduleModal } from "./ScheduleModal";
 import { ScheduleItem } from "../model/types";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import dynamic from "next/dynamic";
+
+const ScheduleModal = dynamic(
+  () => import("./ScheduleModal").then((mod) => mod.ScheduleModal),
+  { ssr: false },
+);
 
 export const CalendarView = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -18,22 +23,44 @@ export const CalendarView = () => {
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { schedules, addSchedule, updateSchedule, removeSchedule } =
-    useScheduleStore();
-
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
+  const schedules = useScheduleStore((s) => s.schedules);
+  const addSchedule = useScheduleStore((s) => s.addSchedule);
+  const updateSchedule = useScheduleStore((s) => s.updateSchedule);
+  const removeSchedule = useScheduleStore((s) => s.removeSchedule);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const handlePrevYear = () => setCurrentDate(new Date(year - 1, month, 1));
-  const handleNextYear = () => setCurrentDate(new Date(year + 1, month, 1));
-  const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-  const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-  const handleToday = () => setCurrentDate(new Date());
-
+  const handlePrevYear = useCallback(
+    () =>
+      setCurrentDate(
+        (prev) => new Date(prev.getFullYear() - 1, prev.getMonth(), 1),
+      ),
+    [],
+  );
+  const handleNextYear = useCallback(
+    () =>
+      setCurrentDate(
+        (prev) => new Date(prev.getFullYear() + 1, prev.getMonth(), 1),
+      ),
+    [],
+  );
+  const handlePrevMonth = useCallback(
+    () =>
+      setCurrentDate(
+        (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
+      ),
+    [],
+  );
+  const handleNextMonth = useCallback(
+    () =>
+      setCurrentDate(
+        (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
+      ),
+    [],
+  );
+  const handleToday = useCallback(() => setCurrentDate(new Date()), []);
   const handleOpenAddModal = useCallback((dateStr: string) => {
     setSelectedDateStr(dateStr);
     setEditingSchedule(null);
@@ -57,6 +84,13 @@ export const CalendarView = () => {
   const handleSelectDate = useCallback((dateStr: string) => {
     setSelectedDateStr(dateStr);
   }, []);
+
+  const handleRemoveSchedule = useCallback(
+    (dateStr: string, id: string) => {
+      removeSchedule(dateStr, id);
+    },
+    [removeSchedule],
+  );
 
   if (!isMounted) {
     return (
@@ -84,7 +118,7 @@ export const CalendarView = () => {
         onSelectDate={handleSelectDate}
         onOpenModal={handleOpenAddModal}
         onEditSchedule={handleOpenEditModal}
-        onRemoveSchedule={removeSchedule}
+        onRemoveSchedule={handleRemoveSchedule}
       />
 
       <ScheduleModal

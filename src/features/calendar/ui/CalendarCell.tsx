@@ -128,6 +128,16 @@ export const CalendarCell = memo(
       </div>
     );
   },
+  (prev, next) =>
+    prev.dateStr === next.dateStr &&
+    prev.isCurrentMonth === next.isCurrentMonth &&
+    prev.isToday === next.isToday &&
+    prev.isSelected === next.isSelected &&
+    prev.daySchedules === next.daySchedules &&
+    prev.onSelectDate === next.onSelectDate &&
+    prev.onOpenModal === next.onOpenModal &&
+    prev.onEditSchedule === next.onEditSchedule &&
+    prev.onRemoveSchedule === next.onRemoveSchedule,
 );
 
 CalendarCell.displayName = "CalendarCell";
