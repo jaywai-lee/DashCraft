@@ -112,7 +112,7 @@ const TodoItem = ({
             </span>
           </button>
 
-          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-auto gap-0.5">
+          <div className="flex items-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 ml-auto gap-0.5">
             <button
               type="button"
               onClick={() => setIsEditing(true)}
