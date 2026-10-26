@@ -73,17 +73,29 @@ export const AuthFormView = () => {
             placeholder="name@example.com"
           />
 
-          <Input
-            label="비밀번호"
-            type="password"
-            required
-            icon={Lock}
-            value={password}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setPassword(e.target.value)
-            }
-            placeholder="••••••••"
-          />
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground">
+                비밀번호
+              </span>
+              <Link
+                href="/forgot-password"
+                className="text-[11px] text-primary hover:underline font-medium"
+              >
+                비밀번호를 잊으셨나요?
+              </Link>
+            </div>
+            <Input
+              type="password"
+              required
+              icon={Lock}
+              value={password}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setPassword(e.target.value)
+              }
+              placeholder="••••••••"
+            />
+          </div>
 
           <Button
             type="submit"
