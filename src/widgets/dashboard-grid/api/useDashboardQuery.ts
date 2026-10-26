@@ -1,12 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { dashboardRepository, WidgetRow } from "./dashboardRepository";
 import { DEFAULT_CLOCK_CONFIG } from "../config/widgets.config";
+import { queryKeys } from "@/shared/config/queryKeys";
 import { Database } from "@/shared/types/database.types";
 import { toast } from "sonner";
-
-export const DASHBOARD_QUERY_KEYS = {
-  widgets: ["widgets"] as const,
-};
 
 interface AddWidgetParams {
   type: WidgetRow["type"];
@@ -29,7 +26,7 @@ interface MutationContext {
 
 export const useWidgetsQuery = () => {
   return useQuery({
-    queryKey: DASHBOARD_QUERY_KEYS.widgets,
+    queryKey: queryKeys.widgets.list(),
     queryFn: () => dashboardRepository.fetchWidgets(),
   });
 };
@@ -40,8 +37,7 @@ export const useAddWidgetMutation = () => {
   return useMutation<WidgetRow, Error, AddWidgetParams, MutationContext>({
     mutationFn: async ({ type, title, color = "default", layout_w = 1 }) => {
       const currentWidgets =
-        queryClient.getQueryData<WidgetRow[]>(DASHBOARD_QUERY_KEYS.widgets) ??
-        [];
+        queryClient.getQueryData<WidgetRow[]>(queryKeys.widgets.list()) ?? [];
 
       const maxSortOrder =
         currentWidgets.length > 0
@@ -68,12 +64,10 @@ export const useAddWidgetMutation = () => {
       });
     },
     onMutate: async (newWidgetParams) => {
-      await queryClient.cancelQueries({
-        queryKey: DASHBOARD_QUERY_KEYS.widgets,
-      });
+      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.list() });
 
       const previousWidgets = queryClient.getQueryData<WidgetRow[]>(
-        DASHBOARD_QUERY_KEYS.widgets,
+        queryKeys.widgets.list(),
       );
 
       if (previousWidgets) {
@@ -101,7 +95,7 @@ export const useAddWidgetMutation = () => {
           updated_at: new Date().toISOString(),
         };
 
-        queryClient.setQueryData<WidgetRow[]>(DASHBOARD_QUERY_KEYS.widgets, [
+        queryClient.setQueryData<WidgetRow[]>(queryKeys.widgets.list(), [
           ...previousWidgets,
           optimisticWidget,
         ]);
@@ -112,14 +106,14 @@ export const useAddWidgetMutation = () => {
     onError: (err, _variables, context) => {
       if (context?.previousWidgets) {
         queryClient.setQueryData<WidgetRow[]>(
-          DASHBOARD_QUERY_KEYS.widgets,
+          queryKeys.widgets.list(),
           context.previousWidgets,
         );
       }
       toast.error("위젯 추가 실패", { description: err.message });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEYS.widgets });
+      queryClient.invalidateQueries({ queryKey: queryKeys.widgets.list() });
     },
   });
 };
@@ -140,17 +134,15 @@ export const useUpdateWidgetMutation = () => {
       });
     },
     onMutate: async ({ widgetId, title, color, layout_w, config }) => {
-      await queryClient.cancelQueries({
-        queryKey: DASHBOARD_QUERY_KEYS.widgets,
-      });
+      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.list() });
 
       const previousWidgets = queryClient.getQueryData<WidgetRow[]>(
-        DASHBOARD_QUERY_KEYS.widgets,
+        queryKeys.widgets.list(),
       );
 
       if (previousWidgets) {
         queryClient.setQueryData<WidgetRow[]>(
-          DASHBOARD_QUERY_KEYS.widgets,
+          queryKeys.widgets.list(),
           previousWidgets.map((w) => {
             if (w.widget_id !== widgetId) return w;
             return {
@@ -174,14 +166,14 @@ export const useUpdateWidgetMutation = () => {
     onError: (err, _variables, context) => {
       if (context?.previousWidgets) {
         queryClient.setQueryData<WidgetRow[]>(
-          DASHBOARD_QUERY_KEYS.widgets,
+          queryKeys.widgets.list(),
           context.previousWidgets,
         );
       }
       toast.error("위젯 수정 실패", { description: err.message });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEYS.widgets });
+      queryClient.invalidateQueries({ queryKey: queryKeys.widgets.list() });
     },
   });
 };
@@ -193,17 +185,15 @@ export const useDeleteWidgetMutation = () => {
     mutationFn: (widgetId: string) =>
       dashboardRepository.deleteWidget(widgetId),
     onMutate: async (widgetId) => {
-      await queryClient.cancelQueries({
-        queryKey: DASHBOARD_QUERY_KEYS.widgets,
-      });
+      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.list() });
 
       const previousWidgets = queryClient.getQueryData<WidgetRow[]>(
-        DASHBOARD_QUERY_KEYS.widgets,
+        queryKeys.widgets.list(),
       );
 
       if (previousWidgets) {
         queryClient.setQueryData<WidgetRow[]>(
-          DASHBOARD_QUERY_KEYS.widgets,
+          queryKeys.widgets.list(),
           previousWidgets.filter((w) => w.widget_id !== widgetId),
         );
       }
@@ -213,14 +203,14 @@ export const useDeleteWidgetMutation = () => {
     onError: (err, _variables, context) => {
       if (context?.previousWidgets) {
         queryClient.setQueryData<WidgetRow[]>(
-          DASHBOARD_QUERY_KEYS.widgets,
+          queryKeys.widgets.list(),
           context.previousWidgets,
         );
       }
       toast.error("위젯 삭제 실패", { description: err.message });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEYS.widgets });
+      queryClient.invalidateQueries({ queryKey: queryKeys.widgets.list() });
     },
   });
 };
@@ -232,12 +222,10 @@ export const useReorderWidgetsMutation = () => {
     mutationFn: (widgetIds: string[]) =>
       dashboardRepository.reorderWidgets(widgetIds),
     onMutate: async (widgetIds) => {
-      await queryClient.cancelQueries({
-        queryKey: DASHBOARD_QUERY_KEYS.widgets,
-      });
+      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.list() });
 
       const previousWidgets = queryClient.getQueryData<WidgetRow[]>(
-        DASHBOARD_QUERY_KEYS.widgets,
+        queryKeys.widgets.list(),
       );
 
       if (previousWidgets) {
@@ -251,7 +239,7 @@ export const useReorderWidgetsMutation = () => {
           .filter((w): w is WidgetRow => w !== null);
 
         queryClient.setQueryData<WidgetRow[]>(
-          DASHBOARD_QUERY_KEYS.widgets,
+          queryKeys.widgets.list(),
           reordered,
         );
       }
@@ -261,14 +249,14 @@ export const useReorderWidgetsMutation = () => {
     onError: (err, _variables, context) => {
       if (context?.previousWidgets) {
         queryClient.setQueryData<WidgetRow[]>(
-          DASHBOARD_QUERY_KEYS.widgets,
+          queryKeys.widgets.list(),
           context.previousWidgets,
         );
       }
       toast.error("위젯 순서 변경 실패", { description: err.message });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEYS.widgets });
+      queryClient.invalidateQueries({ queryKey: queryKeys.widgets.list() });
     },
   });
 };

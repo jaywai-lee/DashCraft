@@ -1,0 +1,179 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { todoRepository, TodoRow } from "./todoRepository";
+import { queryKeys } from "@/shared/config/queryKeys";
+import { toast } from "sonner";
+
+interface MutationContext {
+  previousTodos?: TodoRow[];
+}
+
+export const useTodosQuery = (widgetId: string) => {
+  return useQuery({
+    queryKey: queryKeys.todos.byWidget(widgetId),
+    queryFn: () => todoRepository.fetchTodos(widgetId),
+    enabled: Boolean(widgetId),
+  });
+};
+
+export const useAddTodoMutation = (widgetId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation<TodoRow, Error, string, MutationContext>({
+    mutationFn: async (text: string) => {
+      const currentTodos =
+        queryClient.getQueryData<TodoRow[]>(
+          queryKeys.todos.byWidget(widgetId),
+        ) ?? [];
+
+      const maxSortOrder =
+        currentTodos.length > 0
+          ? Math.max(...currentTodos.map((t) => t.sort_order))
+          : 0;
+
+      return todoRepository.insertTodo({
+        widget_id: widgetId,
+        todo_id: crypto.randomUUID(),
+        text,
+        completed: false,
+        sort_order: maxSortOrder + 1,
+      });
+    },
+    onMutate: async (text) => {
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.todos.byWidget(widgetId),
+      });
+
+      const previousTodos = queryClient.getQueryData<TodoRow[]>(
+        queryKeys.todos.byWidget(widgetId),
+      );
+
+      if (previousTodos) {
+        const maxSortOrder =
+          previousTodos.length > 0
+            ? Math.max(...previousTodos.map((t) => t.sort_order))
+            : 0;
+
+        const optimisticTodo: TodoRow = {
+          id: crypto.randomUUID(),
+          user_id: "",
+          widget_id: widgetId,
+          todo_id: crypto.randomUUID(),
+          text,
+          completed: false,
+          sort_order: maxSortOrder + 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        queryClient.setQueryData<TodoRow[]>(
+          queryKeys.todos.byWidget(widgetId),
+          [...previousTodos, optimisticTodo],
+        );
+      }
+
+      return { previousTodos };
+    },
+    onError: (err, _text, context) => {
+      if (context?.previousTodos) {
+        queryClient.setQueryData<TodoRow[]>(
+          queryKeys.todos.byWidget(widgetId),
+          context.previousTodos,
+        );
+      }
+      toast.error("할 일 추가 실패", { description: err.message });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.todos.byWidget(widgetId),
+      });
+    },
+  });
+};
+
+export const useToggleTodoMutation = (widgetId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    TodoRow,
+    Error,
+    { todoId: string; completed: boolean },
+    MutationContext
+  >({
+    mutationFn: ({ todoId, completed }) =>
+      todoRepository.updateTodo(widgetId, todoId, { completed }),
+    onMutate: async ({ todoId, completed }) => {
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.todos.byWidget(widgetId),
+      });
+
+      const previousTodos = queryClient.getQueryData<TodoRow[]>(
+        queryKeys.todos.byWidget(widgetId),
+      );
+
+      if (previousTodos) {
+        queryClient.setQueryData<TodoRow[]>(
+          queryKeys.todos.byWidget(widgetId),
+          previousTodos.map((t) =>
+            t.todo_id === todoId ? { ...t, completed } : t,
+          ),
+        );
+      }
+
+      return { previousTodos };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousTodos) {
+        queryClient.setQueryData<TodoRow[]>(
+          queryKeys.todos.byWidget(widgetId),
+          context.previousTodos,
+        );
+      }
+      toast.error("할 일 상태 변경 실패", { description: err.message });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.todos.byWidget(widgetId),
+      });
+    },
+  });
+};
+
+export const useDeleteTodoMutation = (widgetId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, string, MutationContext>({
+    mutationFn: (todoId: string) => todoRepository.deleteTodo(widgetId, todoId),
+    onMutate: async (todoId) => {
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.todos.byWidget(widgetId),
+      });
+
+      const previousTodos = queryClient.getQueryData<TodoRow[]>(
+        queryKeys.todos.byWidget(widgetId),
+      );
+
+      if (previousTodos) {
+        queryClient.setQueryData<TodoRow[]>(
+          queryKeys.todos.byWidget(widgetId),
+          previousTodos.filter((t) => t.todo_id !== todoId),
+        );
+      }
+
+      return { previousTodos };
+    },
+    onError: (err, _todoId, context) => {
+      if (context?.previousTodos) {
+        queryClient.setQueryData<TodoRow[]>(
+          queryKeys.todos.byWidget(widgetId),
+          context.previousTodos,
+        );
+      }
+      toast.error("할 일 삭제 실패", { description: err.message });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.todos.byWidget(widgetId),
+      });
+    },
+  });
+};
