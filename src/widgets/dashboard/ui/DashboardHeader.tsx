@@ -1,5 +1,7 @@
 "use client";
 
+import React, { memo, useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import {
   selectIsFilterActive,
   useFilterStore,
@@ -18,6 +20,8 @@ import {
   WidgetType,
 } from "@/widgets/dashboard-grid/config/widgets.config";
 import { useAddWidgetMutation } from "@/widgets/dashboard-grid/api/useDashboardQuery";
+import { createClient } from "@/shared/lib/client";
+import { UserDropdown } from "@/widgets/header/ui/UserDropdown";
 import {
   CalendarIcon,
   ChevronDown,
@@ -26,8 +30,6 @@ import {
   RotateCcw,
   Search,
 } from "lucide-react";
-import Link from "next/link";
-import { memo, useCallback } from "react";
 
 interface DashboardHeaderProps {
   onOpenResetModal: () => void;
@@ -35,10 +37,33 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader = memo(
   ({ onOpenResetModal }: DashboardHeaderProps) => {
+    const supabase = createClient();
     const addWidgetMutation = useAddWidgetMutation();
     const toggleFilter = useFilterStore((s) => s.toggleFilter);
     const isOpen = useFilterStore((s) => s.isOpen);
     const isFilterActive = useFilterStore(selectIsFilterActive);
+
+    const [userInfo, setUserInfo] = useState<{
+      email?: string;
+      avatarUrl?: string;
+    }>({});
+
+    useEffect(() => {
+      const getUserSession = async () => {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          setUserInfo({
+            email: user.email,
+            avatarUrl: user.user_metadata?.avatar_url,
+          });
+        }
+      };
+
+      getUserSession();
+    }, [supabase]);
 
     const handleAddWidget = useCallback(
       (type: WidgetType) => {
@@ -69,8 +94,12 @@ export const DashboardHeader = memo(
             </span>
           </Link>
 
-          <div className="sm:hidden">
+          <div className="flex items-center gap-2 sm:hidden">
             <ThemeToggle />
+            <UserDropdown
+              userEmail={userInfo.email}
+              avatarUrl={userInfo.avatarUrl}
+            />
           </div>
         </div>
 
@@ -149,6 +178,13 @@ export const DashboardHeader = memo(
               })}
             </DropdownContent>
           </Dropdown>
+
+          <div className="hidden sm:block">
+            <UserDropdown
+              userEmail={userInfo.email}
+              avatarUrl={userInfo.avatarUrl}
+            />
+          </div>
         </div>
       </header>
     );
