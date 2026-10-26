@@ -260,3 +260,34 @@ export const useReorderWidgetsMutation = () => {
     },
   });
 };
+
+export const useResetDashboardMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, void, MutationContext>({
+    mutationFn: () => dashboardRepository.deleteAllWidgets(),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.list() });
+
+      const previousWidgets = queryClient.getQueryData<WidgetRow[]>(
+        queryKeys.widgets.list(),
+      );
+
+      queryClient.setQueryData<WidgetRow[]>(queryKeys.widgets.list(), []);
+
+      return { previousWidgets };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousWidgets) {
+        queryClient.setQueryData<WidgetRow[]>(
+          queryKeys.widgets.list(),
+          context.previousWidgets,
+        );
+      }
+      toast.error("대시보드 초기화 실패", { description: err.message });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.widgets.list() });
+    },
+  });
+};

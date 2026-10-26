@@ -63,4 +63,14 @@ export const dashboardRepository = {
 
     if (error) throw error;
   },
+
+  async deleteAllWidgets(): Promise<void> {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("widgets")
+      .delete()
+      .neq("widget_id", "");
+
+    if (error) throw error;
+  },
 };

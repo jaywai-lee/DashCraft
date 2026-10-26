@@ -13,16 +13,23 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { toast } from "sonner";
-import { Widget } from "@/entities/widget/model/types";
-import { useDashboardStore } from "./useDashboardStore";
+import { WidgetRow } from "../api/dashboardRepository";
+import {
+  useWidgetsQuery,
+  useReorderWidgetsMutation,
+} from "../api/useDashboardQuery";
 
 const RAPID_SWAP_THRESHOLD = 6;
 const RESET_INTERVAL_MS = 400;
 
 export const useDashboardDnD = () => {
-  const { widgets, setWidgets } = useDashboardStore();
-  const [draggedWidgets, setDraggedWidgets] = useState<Widget[] | null>(null);
-  const [activeWidget, setActiveWidget] = useState<Widget | null>(null);
+  const { data: widgets = [] } = useWidgetsQuery();
+  const reorderMutation = useReorderWidgetsMutation();
+
+  const [draggedWidgets, setDraggedWidgets] = useState<WidgetRow[] | null>(
+    null,
+  );
+  const [activeWidget, setActiveWidget] = useState<WidgetRow | null>(null);
 
   const lastOverIdRef = useRef<string | number | null>(null);
   const swapCountRef = useRef<number>(0);
@@ -35,17 +42,14 @@ export const useDashboardDnD = () => {
   });
 
   const touchSensor = useSensor(TouchSensor, {
-    activationConstraint: {
-      delay: 200,
-      tolerance: 5,
-    },
+    activationConstraint: { delay: 200, tolerance: 5 },
   });
 
   const sensors = useSensors(pointerSensor, touchSensor);
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    const foundWidget = localWidgets.find((w) => w.id === active.id);
+    const foundWidget = localWidgets.find((w) => w.widget_id === active.id);
     if (foundWidget) {
       setActiveWidget(foundWidget);
       setDraggedWidgets(widgets);
@@ -76,8 +80,8 @@ export const useDashboardDnD = () => {
       return;
     }
 
-    const oldIndex = localWidgets.findIndex((w) => w.id === active.id);
-    const newIndex = localWidgets.findIndex((w) => w.id === over.id);
+    const oldIndex = localWidgets.findIndex((w) => w.widget_id === active.id);
+    const newIndex = localWidgets.findIndex((w) => w.widget_id === over.id);
 
     if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
       lastOverIdRef.current = over.id;
@@ -89,17 +93,13 @@ export const useDashboardDnD = () => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = localWidgets.findIndex((w) => w.id === active.id);
-      const newIndex = localWidgets.findIndex((w) => w.id === over.id);
+      const oldIndex = localWidgets.findIndex((w) => w.widget_id === active.id);
+      const newIndex = localWidgets.findIndex((w) => w.widget_id === over.id);
 
       if (oldIndex !== -1 && newIndex !== -1) {
         const updated = arrayMove(localWidgets, oldIndex, newIndex);
-        setWidgets(updated);
-      } else {
-        setWidgets(localWidgets);
+        reorderMutation.mutate(updated.map((w) => w.widget_id));
       }
-    } else {
-      setWidgets(localWidgets);
     }
 
     setDraggedWidgets(null);

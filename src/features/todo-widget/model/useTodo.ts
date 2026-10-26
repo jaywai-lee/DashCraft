@@ -1,19 +1,26 @@
 "use client";
 
 import React, { useState } from "react";
-import { useTodoStore } from "./useTodoStore";
+import {
+  useTodosQuery,
+  useAddTodoMutation,
+  useToggleTodoMutation,
+  useDeleteTodoMutation,
+} from "../api/useTodoQuery";
 
 export const useTodo = (widgetId: string) => {
-  const { getTodos, addTodo, toggleTodo, editTodo, deleteTodo } =
-    useTodoStore();
-  const todos = getTodos(widgetId);
+  const { data: todos = [] } = useTodosQuery(widgetId);
+  const addTodoMutation = useAddTodoMutation(widgetId);
+  const toggleTodoMutation = useToggleTodoMutation(widgetId);
+  const deleteTodoMutation = useDeleteTodoMutation(widgetId);
+
   const [inputText, setInputText] = useState("");
 
   const handleAddTodo = (e: React.SubmitEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
 
-    addTodo(widgetId, inputText);
+    addTodoMutation.mutate(inputText.trim());
     setInputText("");
   };
 
@@ -27,10 +34,9 @@ export const useTodo = (widgetId: string) => {
     inputText,
     setInputText,
     addTodo: handleAddTodo,
-    toggleTodo: (id: string) => toggleTodo(widgetId, id),
-    editTodo: (todoId: string, text: string) =>
-      editTodo(widgetId, todoId, text),
-    deleteTodo: (id: string) => deleteTodo(widgetId, id),
+    toggleTodo: (todoId: string, completed: boolean) =>
+      toggleTodoMutation.mutate({ todoId, completed: !completed }),
+    deleteTodo: (todoId: string) => deleteTodoMutation.mutate(todoId),
     progressPercent,
   };
 };

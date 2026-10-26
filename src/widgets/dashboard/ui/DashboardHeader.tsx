@@ -17,7 +17,7 @@ import {
   WIDGET_OPTIONS,
   WidgetType,
 } from "@/widgets/dashboard-grid/config/widgets.config";
-import { useDashboardStore } from "@/widgets/dashboard-grid/model/useDashboardStore";
+import { useAddWidgetMutation } from "@/widgets/dashboard-grid/api/useDashboardQuery";
 import {
   CalendarIcon,
   ChevronDown,
@@ -35,7 +35,7 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader = memo(
   ({ onOpenResetModal }: DashboardHeaderProps) => {
-    const addWidget = useDashboardStore.getState().addWidget;
+    const addWidgetMutation = useAddWidgetMutation();
     const toggleFilter = useFilterStore((s) => s.toggleFilter);
     const isOpen = useFilterStore((s) => s.isOpen);
     const isFilterActive = useFilterStore(selectIsFilterActive);
@@ -45,13 +45,13 @@ export const DashboardHeader = memo(
         const config = WIDGET_CONFIG_MAP[type];
         if (!config) return;
 
-        addWidget({
+        addWidgetMutation.mutate({
           type: config.type,
           title: config.title,
-          layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
+          layout_w: 1,
         });
       },
-      [addWidget],
+      [addWidgetMutation],
     );
 
     return (
@@ -126,6 +126,7 @@ export const DashboardHeader = memo(
                 variant="primary"
                 size="sm"
                 className="flex-1 sm:flex-initial h-8 px-2.5 sm:px-3 text-xs gap-1"
+                disabled={addWidgetMutation.isPending}
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span className="whitespace-nowrap">위젯 추가</span>
