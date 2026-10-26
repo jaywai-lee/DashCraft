@@ -16,3 +16,12 @@ export const WIDGET_CONFIG_MAP: Record<WidgetType, WidgetConfigItem> = {
 };
 
 export const WIDGET_OPTIONS = Object.values(WIDGET_CONFIG_MAP);
+
+export const DEFAULT_CLOCK_CONFIG = {
+  workDuration: 1500,
+  breakDuration: 300,
+  isSoundEnabled: true,
+  isNotificationEnabled: true,
+} as const;
+
+export type ClockConfig = typeof DEFAULT_CLOCK_CONFIG;
