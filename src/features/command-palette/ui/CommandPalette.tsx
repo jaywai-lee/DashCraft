@@ -1,6 +1,9 @@
 "use client";
 
-import { useDashboardStore } from "@/widgets/dashboard-grid/model/useDashboardStore";
+import {
+  useWidgetsQuery,
+  useAddWidgetMutation,
+} from "@/widgets/dashboard-grid/api/useDashboardQuery";
 import { useCommandPalette } from "../model/useCommandPalette";
 import { useFilterStore } from "@/features/dashboard-filter/model/useFilterStore";
 import {
@@ -13,25 +16,27 @@ import { Filter, Plus, Search } from "lucide-react";
 
 export const CommandPalette = () => {
   const { isOpen, setIsOpen } = useCommandPalette();
-  const { addWidget, widgets } = useDashboardStore();
+  const { data: widgets = [] } = useWidgetsQuery();
+  const addWidgetMutation = useAddWidgetMutation();
   const { setSelectedWidgetType, setSearchQuery } = useFilterStore();
 
   if (!isOpen) return null;
 
   const handleAddWidget = (type: WidgetType) => {
     const config = WIDGET_CONFIG_MAP[type];
-    addWidget({
-      type,
-      title: config?.title || "새 위젯",
-      color: "default",
-      layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
+    if (!config) return;
+
+    addWidgetMutation.mutate({
+      type: config.type,
+      title: config.title,
+      layout_w: 1,
     });
     setIsOpen(false);
   };
 
-  const handleFocusWidget = (id: string) => {
+  const handleFocusWidget = (widgetId: string) => {
     setIsOpen(false);
-    const element = document.getElementById(`widget-${id}`);
+    const element = document.getElementById(`widget-${widgetId}`);
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "center" });
       element.classList.add("ring-2", "ring-primary");
@@ -79,9 +84,9 @@ export const CommandPalette = () => {
               >
                 {widgets.map((widget) => (
                   <Command.Item
-                    key={widget.id}
-                    value={`widget-${widget.title}-${widget.id}`}
-                    onSelect={() => handleFocusWidget(widget.id)}
+                    key={widget.widget_id}
+                    value={`widget-${widget.title}-${widget.widget_id}`}
+                    onSelect={() => handleFocusWidget(widget.widget_id)}
                     className="flex items-center gap-2 px-2.5 py-2 rounded-md text-sm cursor-pointer data-[selected='true']:bg-primary/10 data-[selected='true']:text-primary aria-selected:bg-primary/10 aria-selected:text-primary transition-colors"
                   >
                     <Search className="w-4 h-4 text-muted-foreground" />

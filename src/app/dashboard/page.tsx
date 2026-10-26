@@ -1,20 +1,16 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { DashboardFilterBar } from "@/features/dashboard-filter/ui/DashboardFilterBar";
-import { useMemoStore } from "@/features/memo-widget/model/useMemoStore";
-import { useTodoStore } from "@/features/todo-widget/model/useTodoStore";
 import { Button } from "@/shared/ui/button";
 import { Modal } from "@/shared/ui/modal";
-import { useDashboardStore } from "@/widgets/dashboard-grid/model/useDashboardStore";
 import { DashboardGrid } from "@/widgets/dashboard-grid/ui/DashboardGrid";
 import { ActiveWidgetCounter } from "@/widgets/dashboard/ui/ActiveWidgetCounter";
 import { DashboardHeader } from "@/widgets/dashboard/ui/DashboardHeader";
-import { useCallback, useState } from "react";
+import { useResetDashboardMutation } from "@/widgets/dashboard-grid/api/useDashboardQuery";
 
 export default function DashboardPage() {
-  const resetDashboard = useDashboardStore((s) => s.resetDashboard);
-  const resetAllTodos = useTodoStore((s) => s.resetAllTodos);
-  const resetAllMemos = useMemoStore((s) => s.resetAllMemos);
+  const resetDashboardMutation = useResetDashboardMutation();
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   const handleOpenResetModal = useCallback(() => {
@@ -26,11 +22,12 @@ export default function DashboardPage() {
   }, []);
 
   const handleConfirmReset = useCallback(() => {
-    resetDashboard();
-    resetAllTodos();
-    resetAllMemos();
-    setIsResetModalOpen(false);
-  }, [resetDashboard, resetAllTodos, resetAllMemos]);
+    resetDashboardMutation.mutate(undefined, {
+      onSuccess: () => {
+        setIsResetModalOpen(false);
+      },
+    });
+  }, [resetDashboardMutation]);
 
   return (
     <div className="min-h-screen bg-muted/20 text-foreground flex flex-col">
@@ -72,21 +69,31 @@ export default function DashboardPage() {
         isOpen={isResetModalOpen}
         onClose={handleCloseResetModal}
         title="대시보드 초기화"
-        description="배치된 모든 위젯과 할 일 데이터가 삭제됩니다. 계속 진행하시겠습니까?"
+        description="배치된 모든 위젯과 하위 데이터(할 일, 메모, D-Day 등)가 삭제됩니다. 계속 진행하시겠습니까?"
         footer={
           <>
-            <Button variant="outline" size="md" onClick={handleCloseResetModal}>
+            <Button
+              variant="outline"
+              size="md"
+              onClick={handleCloseResetModal}
+              disabled={resetDashboardMutation.isPending}
+            >
               취소
             </Button>
-            <Button variant="danger" size="md" onClick={handleConfirmReset}>
+            <Button
+              variant="danger"
+              size="md"
+              onClick={handleConfirmReset}
+              isLoading={resetDashboardMutation.isPending}
+            >
               초기화
             </Button>
           </>
         }
       >
         <p className="text-xs text-muted-foreground">
-          이 작업은 되돌릴 수 없으며, 로컬 저장소에 보관된 대시보드 상태가 초기
-          상태로 되돌아갑니다.
+          이 작업은 되돌릴 수 없으며, 데이터베이스에 저장된 대시보드의 모든
+          위젯이 삭제됩니다.
         </p>
       </Modal>
     </div>

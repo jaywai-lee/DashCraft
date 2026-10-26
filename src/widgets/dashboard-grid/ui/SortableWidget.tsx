@@ -1,29 +1,30 @@
 "use client";
 
-import { Widget } from "@/entities/widget/model/types";
-import { WidgetFrame } from "@/entities/widget/ui/WidgetFrame";
-import { cn } from "@/shared/lib/utils";
+import { memo, useCallback, useMemo } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "framer-motion";
-import { useDashboardStore } from "../model/useDashboardStore";
-import { useTodoStore } from "@/features/todo-widget/model/useTodoStore";
-import { useMemoStore } from "@/features/memo-widget/model/useMemoStore";
-import { useDDayStore } from "@/features/dday-widget/model/useDDayStore";
+import { WidgetFrame } from "@/entities/widget/ui/WidgetFrame";
+import { WidgetColor } from "@/entities/widget/model/types";
+import { cn } from "@/shared/lib/utils";
 import { WidgetContentRenderer } from "./WidgetContentRenderer";
-import { useClockStore } from "@/features/clock-widget/model/useClockStore";
-import { memo, useCallback, useMemo } from "react";
+import { WidgetRow } from "../api/dashboardRepository";
+import {
+  useDeleteWidgetMutation,
+  useUpdateWidgetMutation,
+  useReorderWidgetsMutation,
+  useWidgetsQuery,
+} from "../api/useDashboardQuery";
 
 interface SortableWidgetProps {
-  widget: Widget;
+  widget: WidgetRow;
 }
 
 export const SortableWidget = memo(({ widget }: SortableWidgetProps) => {
-  const removeWidget = useDashboardStore((s) => s.removeWidget);
-  const removeWidgetTodos = useTodoStore((s) => s.removeWidgetTodos);
-  const removeWidgetMemo = useMemoStore((s) => s.removeWidgetMemo);
-  const removeWidgetDDays = useDDayStore((s) => s.removeWidgetDDays);
-  const removeWidgetClock = useClockStore((s) => s.removeWidgetClock);
+  const { data: widgets = [] } = useWidgetsQuery();
+  const deleteWidgetMutation = useDeleteWidgetMutation();
+  const updateWidgetMutation = useUpdateWidgetMutation();
+  const reorderWidgetsMutation = useReorderWidgetsMutation();
 
   const {
     attributes,
@@ -32,7 +33,7 @@ export const SortableWidget = memo(({ widget }: SortableWidgetProps) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: widget.id });
+  } = useSortable({ id: widget.widget_id });
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -40,26 +41,67 @@ export const SortableWidget = memo(({ widget }: SortableWidgetProps) => {
   };
 
   const colSpanClass =
-    widget.layout.w === 2
+    widget.layout_w === 2
       ? "col-span-1 row-span-2 md:col-span-2"
       : "col-span-1";
 
-  const handleRemove = useCallback(
-    (id: string) => {
-      removeWidget(id);
-      removeWidgetTodos(id);
-      removeWidgetMemo(id);
-      removeWidgetDDays(id);
-      removeWidgetClock(id);
+  const handleRemove = useCallback(() => {
+    deleteWidgetMutation.mutate(widget.widget_id);
+  }, [deleteWidgetMutation, widget.widget_id]);
+
+  const handleUpdateTitle = useCallback(
+    (title: string) => {
+      updateWidgetMutation.mutate({
+        widgetId: widget.widget_id,
+        title,
+      });
     },
-    [
-      removeWidget,
-      removeWidgetTodos,
-      removeWidgetMemo,
-      removeWidgetDDays,
-      removeWidgetClock,
-    ],
+    [updateWidgetMutation, widget.widget_id],
   );
+
+  const handleSelectColor = useCallback(
+    (color: WidgetColor) => {
+      updateWidgetMutation.mutate({
+        widgetId: widget.widget_id,
+        color,
+      });
+    },
+    [updateWidgetMutation, widget.widget_id],
+  );
+
+  const handleToggleWidth = useCallback(() => {
+    const nextWidth = widget.layout_w === 1 ? 2 : 1;
+    updateWidgetMutation.mutate({
+      widgetId: widget.widget_id,
+      layout_w: nextWidth,
+    });
+  }, [updateWidgetMutation, widget.widget_id, widget.layout_w]);
+
+  const handleMoveLeft = useCallback(() => {
+    const currentIndex = widgets.findIndex(
+      (w) => w.widget_id === widget.widget_id,
+    );
+    if (currentIndex <= 0) return;
+
+    const reordered = [...widgets];
+    const [target] = reordered.splice(currentIndex, 1);
+    reordered.splice(currentIndex - 1, 0, target);
+
+    reorderWidgetsMutation.mutate(reordered.map((w) => w.widget_id));
+  }, [widgets, widget.widget_id, reorderWidgetsMutation]);
+
+  const handleMoveRight = useCallback(() => {
+    const currentIndex = widgets.findIndex(
+      (w) => w.widget_id === widget.widget_id,
+    );
+    if (currentIndex === -1 || currentIndex >= widgets.length - 1) return;
+
+    const reordered = [...widgets];
+    const [target] = reordered.splice(currentIndex, 1);
+    reordered.splice(currentIndex + 1, 0, target);
+
+    reorderWidgetsMutation.mutate(reordered.map((w) => w.widget_id));
+  }, [widgets, widget.widget_id, reorderWidgetsMutation]);
 
   const dragHandleProps = useMemo(
     () => ({ attributes, listeners }),
@@ -86,12 +128,17 @@ export const SortableWidget = memo(({ widget }: SortableWidgetProps) => {
       )}
     >
       <WidgetFrame
-        id={widget.id}
+        id={widget.widget_id}
         title={widget.title}
-        color={widget.color}
-        width={widget.layout.w}
+        color={widget.color as WidgetColor}
+        width={widget.layout_w}
         dragHandleProps={dragHandleProps}
         onRemove={handleRemove}
+        onUpdateTitle={handleUpdateTitle}
+        onSelectColor={handleSelectColor}
+        onToggleWidth={handleToggleWidth}
+        onMoveLeft={handleMoveLeft}
+        onMoveRight={handleMoveRight}
       >
         <WidgetContentRenderer widget={widget} />
       </WidgetFrame>

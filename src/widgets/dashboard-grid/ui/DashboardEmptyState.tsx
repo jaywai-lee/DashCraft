@@ -1,10 +1,12 @@
+"use client";
+
 import { ChevronDown, LayoutGrid, Plus, SearchX } from "lucide-react";
 import {
   WIDGET_CONFIG_MAP,
   WIDGET_OPTIONS,
   WidgetType,
 } from "../config/widgets.config";
-import { useDashboardStore } from "../model/useDashboardStore";
+import { useAddWidgetMutation } from "../api/useDashboardQuery";
 import {
   Dropdown,
   DropdownContent,
@@ -18,7 +20,7 @@ interface DashboardEmptyProps {
 }
 
 export const DashboardEmpty = ({ onAddWidget }: DashboardEmptyProps) => {
-  const { addWidget } = useDashboardStore();
+  const addWidgetMutation = useAddWidgetMutation();
 
   const handleAddWidget = (type: WidgetType) => {
     if (onAddWidget) {
@@ -29,10 +31,10 @@ export const DashboardEmpty = ({ onAddWidget }: DashboardEmptyProps) => {
     const config = WIDGET_CONFIG_MAP[type];
     if (!config) return;
 
-    addWidget({
+    addWidgetMutation.mutate({
       type: config.type,
       title: config.title,
-      layout: { id: "", x: 0, y: 0, w: 1, h: 1 },
+      layout_w: 1,
     });
   };
 
@@ -51,7 +53,12 @@ export const DashboardEmpty = ({ onAddWidget }: DashboardEmptyProps) => {
 
       <Dropdown>
         <DropdownTrigger>
-          <Button variant="primary" size="md" className="gap-1.5">
+          <Button
+            variant="primary"
+            size="md"
+            className="gap-1.5"
+            disabled={addWidgetMutation.isPending}
+          >
             <Plus className="w-4 h-4" />
             <span>첫 위젯 추가하기</span>
             <ChevronDown className="w-3.5 h-3.5" />

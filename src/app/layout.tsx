@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "@/styles/globals.css";
-import { ThemeProvider } from "./providers/ThemeProvider";
 import { Toaster } from "sonner";
 import { CommandPalette } from "@/features/command-palette/ui/CommandPalette";
+import Providers from "./providers";
 
 const pretendard = localFont({
   src: [
@@ -45,16 +45,11 @@ export default function RootLayout({
   return (
     <html lang="ko" className={pretendard.variable} suppressHydrationWarning>
       <body className="font-sans antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <Providers>
           {children}
           <CommandPalette />
           <Toaster position="top-center" richColors />
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );

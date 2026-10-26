@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { useMemoStore } from "../model/useMemoStore";
+import { useMemoQuery, useUpsertMemoMutation } from "../api/useMemoQuery";
+import { flushMemoKeepalive } from "../api/memoKeepalive";
 import { cn } from "@/shared/lib/utils";
 import { useTextHighLighter } from "@/shared/lib/useTextHighlighter";
 import { HighlightPicker } from "@/shared/ui/highlight-picker/HighlightPicker";
@@ -20,17 +21,20 @@ export const MemoWidget = ({
   widgetId,
   isExpanded = false,
 }: MemoWidgetProps) => {
-  const memo = useMemoStore((s) => s.memos[widgetId]);
-  const updateMemo = useMemoStore((s) => s.updateMemo);
+  const { data: memo } = useMemoQuery(widgetId);
+  const upsertMutation = useUpsertMemoMutation(widgetId);
 
   const editorRef = useRef<HTMLDivElement>(null);
   const [textLength, setTextLength] = useState(0);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const htmlContent = memo?.content ?? "";
+  const currentHighlight = memo?.highlight ?? "none";
 
   const { applyHighlight, exitHighlightOnKey } = useTextHighLighter(
     editorRef,
     (newHtml) => {
-      updateMemo(widgetId, newHtml);
+      saveMemo(newHtml, currentHighlight);
     },
   );
 
@@ -45,12 +49,48 @@ export const MemoWidget = ({
     }
   }, [htmlContent]);
 
+  const saveMemo = (content: string, highlight = currentHighlight) => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+
+    debounceTimerRef.current = setTimeout(() => {
+      upsertMutation.mutate({ content, highlight });
+    }, 800);
+  };
+
+  useEffect(() => {
+    const handleFlush = () => {
+      if (editorRef.current) {
+        flushMemoKeepalive(
+          widgetId,
+          editorRef.current.innerHTML,
+          currentHighlight,
+        );
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        handleFlush();
+      }
+    };
+
+    window.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handleFlush);
+
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      handleFlush();
+      window.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handleFlush);
+    };
+  }, [widgetId, currentHighlight]);
+
   const handleInput = () => {
     if (!editorRef.current) return;
     const currentHtml = editorRef.current.innerHTML;
 
     setTextLength(getPlainTextLength(editorRef.current));
-    updateMemo(widgetId, currentHtml);
+    saveMemo(currentHtml);
   };
 
   return (

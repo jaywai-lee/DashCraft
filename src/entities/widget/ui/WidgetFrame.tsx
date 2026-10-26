@@ -1,6 +1,5 @@
 "use client";
 
-import { useDashboardStore } from "@/widgets/dashboard-grid/model/useDashboardStore";
 import React, { memo, useCallback } from "react";
 import { WidgetColor } from "../model/types";
 import { cn } from "@/shared/lib/utils";
@@ -24,6 +23,11 @@ interface WidgetFrameProps {
   children: React.ReactNode;
   dragHandleProps?: DragHandleProps;
   onRemove?: (id: string) => void;
+  onUpdateTitle?: (title: string) => void;
+  onSelectColor?: (color: WidgetColor) => void;
+  onToggleWidth?: () => void;
+  onMoveLeft?: (id: string) => void;
+  onMoveRight?: (id: string) => void;
 }
 
 export const WidgetFrame = memo(
@@ -35,54 +39,49 @@ export const WidgetFrame = memo(
     children,
     dragHandleProps,
     onRemove,
+    onUpdateTitle,
+    onSelectColor,
+    onToggleWidth,
+    onMoveLeft,
+    onMoveRight,
   }: WidgetFrameProps) => {
-    const removeWidget = useDashboardStore((s) => s.removeWidget);
-    const moveWidget = useDashboardStore((s) => s.moveWidget);
-    const toggleWidgetWidth = useDashboardStore((s) => s.toggleWidgetWidth);
-    const updateWidgetTitle = useDashboardStore((s) => s.updateWidgetTitle);
-    const updateWidgetColor = useDashboardStore((s) => s.updateWidgetColor);
-
     const currentTheme = COLOR_THEMES[color] || COLOR_THEMES.default;
 
     const handleRemove = useCallback(() => {
-      if (onRemove) {
-        onRemove(id);
-      } else {
-        removeWidget(id);
-      }
-    }, [id, onRemove, removeWidget]);
+      onRemove?.(id);
+    }, [id, onRemove]);
 
     const handleMoveLeft = useCallback(
       (targetId: string) => {
-        moveWidget(targetId, "left");
+        onMoveLeft?.(targetId);
       },
-      [moveWidget],
+      [onMoveLeft],
     );
 
     const handleMoveRight = useCallback(
       (targetId: string) => {
-        moveWidget(targetId, "right");
+        onMoveRight?.(targetId);
       },
-      [moveWidget],
+      [onMoveRight],
     );
 
     const handleUpdateTitle = useCallback(
       (newTitle: string) => {
-        updateWidgetTitle(id, newTitle);
+        onUpdateTitle?.(newTitle);
       },
-      [id, updateWidgetTitle],
+      [onUpdateTitle],
     );
 
     const handleSelectColor = useCallback(
       (newColor: WidgetColor) => {
-        updateWidgetColor(id, newColor);
+        onSelectColor?.(newColor);
       },
-      [id, updateWidgetColor],
+      [onSelectColor],
     );
 
     const handleToggleWidth = useCallback(() => {
-      toggleWidgetWidth(id);
-    }, [id, toggleWidgetWidth]);
+      onToggleWidth?.();
+    }, [onToggleWidth]);
 
     return (
       <div
