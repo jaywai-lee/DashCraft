@@ -2,14 +2,17 @@ import { useMemo } from "react";
 import { useWidgetsQuery } from "../api/useDashboardQuery";
 import { useFilterStore } from "@/features/dashboard-filter/model/useFilterStore";
 import { isWithinDateRange } from "../lib/isWithinDateRange";
+import { WidgetRow } from "../api/dashboardRepository";
 
-export const useFilteredWidgets = () => {
-  const { data: widgets = [] } = useWidgetsQuery();
+export const useFilteredWidgets = (targetWidgets?: WidgetRow[]) => {
+  const { data: widgets = [], isLoading } = useWidgetsQuery();
+  const widgetsToFilter = targetWidgets ?? widgets;
+
   const { searchQuery, selectedWidgetType, datePreset, startDate, endDate } =
     useFilterStore();
 
   const filteredWidgets = useMemo(() => {
-    return widgets.filter((widget) => {
+    return widgetsToFilter.filter((widget) => {
       if (selectedWidgetType !== "all" && widget.type !== selectedWidgetType) {
         return false;
       }
@@ -29,7 +32,7 @@ export const useFilteredWidgets = () => {
       return true;
     });
   }, [
-    widgets,
+    widgetsToFilter,
     selectedWidgetType,
     datePreset,
     startDate,
@@ -37,5 +40,5 @@ export const useFilteredWidgets = () => {
     searchQuery,
   ]);
 
-  return { filteredWidgets, allWidgets: widgets };
+  return { filteredWidgets, allWidgets: widgets, isLoading };
 };

@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { DndContext, DragOverlay } from "@dnd-kit/core";
 import { rectSortingStrategy, SortableContext } from "@dnd-kit/sortable";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { AnimatePresence } from "framer-motion";
 import { WidgetFrame } from "@/entities/widget/ui/WidgetFrame";
+import { WidgetColor } from "@/entities/widget/model/types";
 import { useFilterStore } from "@/features/dashboard-filter/model/useFilterStore";
 import { SortableWidget } from "./SortableWidget";
 import { DashboardEmpty, DashboardSearchEmpty } from "./DashboardEmptyState";
@@ -15,7 +16,6 @@ import { useFilteredWidgets } from "../model/useFilteredWidgets";
 import { WidgetContentRenderer } from "./WidgetContentRenderer";
 
 export const DashboardGrid = () => {
-  const [isMounted, setIsMounted] = useState(false);
   const { resetFilter } = useFilterStore();
 
   const {
@@ -29,19 +29,15 @@ export const DashboardGrid = () => {
     collisionDetection,
   } = useDashboardDnD();
 
-  const { filteredWidgets: filteredLocalWidgets } =
+  const { filteredWidgets: filteredLocalWidgets, isLoading } =
     useFilteredWidgets(localWidgets);
 
   const widgetIds = useMemo(
-    () => filteredLocalWidgets.map((w) => w.id),
+    () => filteredLocalWidgets.map((w) => w.widget_id),
     [filteredLocalWidgets],
   );
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
+  if (isLoading) {
     return <DashboardGridSkeleton count={5} />;
   }
 
@@ -67,7 +63,7 @@ export const DashboardGrid = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 items-start w-full">
           <AnimatePresence mode="popLayout">
             {filteredLocalWidgets.map((widget) => (
-              <SortableWidget key={widget.id} widget={widget} />
+              <SortableWidget key={widget.widget_id} widget={widget} />
             ))}
           </AnimatePresence>
         </div>
@@ -77,10 +73,10 @@ export const DashboardGrid = () => {
         {activeWidget ? (
           <div className="w-full opacity-90 scale-[1.02] shadow-2xl cursor-grabbing pointer-events-none">
             <WidgetFrame
-              id={activeWidget.id}
+              id={activeWidget.widget_id}
               title={activeWidget.title}
-              color={activeWidget.color}
-              width={activeWidget.layout.w}
+              color={activeWidget.color as WidgetColor}
+              width={activeWidget.layout_w}
             >
               <WidgetContentRenderer widget={activeWidget} />
             </WidgetFrame>
