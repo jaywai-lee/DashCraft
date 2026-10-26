@@ -7,6 +7,10 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    env: {
+      NEXT_PUBLIC_SUPABASE_URL: "https://test-project.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "test-anon-key",
+    },
   },
   resolve: {
     alias: {
