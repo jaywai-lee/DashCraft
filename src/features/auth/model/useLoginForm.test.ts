@@ -42,26 +42,11 @@ describe("useLoginForm Hook", () => {
 
     expect(result.current.email).toBe("");
     expect(result.current.password).toBe("");
-    expect(result.current.agreed).toBe(false);
     expect(result.current.isLoading).toBe(false);
     expect(result.current.modalType).toBeNull();
   });
 
-  it("약관 동의를 하지 않으면 이메일 로그인이 제출되지 않아야 한다", async () => {
-    const { result } = renderHook(() => useLoginForm());
-
-    const fakeEvent = {
-      preventDefault: vi.fn(),
-    } as unknown as React.SubmitEvent<HTMLFormElement>;
-
-    await act(async () => {
-      await result.current.handleEmailLogin(fakeEvent);
-    });
-
-    expect(mockSignInWithPassword).not.toHaveBeenCalled();
-  });
-
-  it("약관 동의 후 올바른 정보를 입력하면 성공적으로 로그인되고 대시보드로 이동해야 한다", async () => {
+  it("올바른 정보를 입력하고 제출하면 성공적으로 로그인되고 대시보드로 이동해야 한다", async () => {
     mockSignInWithPassword.mockResolvedValueOnce({ error: null });
 
     const { result } = renderHook(() => useLoginForm());
@@ -69,12 +54,11 @@ describe("useLoginForm Hook", () => {
     act(() => {
       result.current.setEmail("user@example.com");
       result.current.setPassword("password123");
-      result.current.setAgreed(true);
     });
 
     const fakeEvent = {
       preventDefault: vi.fn(),
-    } as unknown as React.SubmitEvent<HTMLFormElement>;
+    } as unknown as React.SubmitEvent;
 
     await act(async () => {
       await result.current.handleEmailLogin(fakeEvent);
@@ -95,13 +79,9 @@ describe("useLoginForm Hook", () => {
 
     const { result } = renderHook(() => useLoginForm());
 
-    act(() => {
-      result.current.setAgreed(true);
-    });
-
     const fakeEvent = {
       preventDefault: vi.fn(),
-    } as unknown as React.SubmitEvent<HTMLFormElement>;
+    } as unknown as React.SubmitEvent;
 
     await act(async () => {
       await result.current.handleEmailLogin(fakeEvent);

@@ -24,6 +24,26 @@ describe("useSignupForm Hook", () => {
     vi.clearAllMocks();
   });
 
+  it("약관 동의를 하지 않으면 회원가입 요청이 전송되지 않아야 한다", async () => {
+    const { result } = renderHook(() => useSignupForm());
+
+    act(() => {
+      result.current.setEmail("newuser@example.com");
+      result.current.setPassword("password123");
+      result.current.setAgreed(false);
+    });
+
+    const fakeEvent = {
+      preventDefault: vi.fn(),
+    } as unknown as React.SubmitEvent;
+
+    await act(async () => {
+      await result.current.handleSignup(fakeEvent);
+    });
+
+    expect(mockSignUp).not.toHaveBeenCalled();
+  });
+
   it("비밀번호가 6자 미만이면 회원가입 요청을 보내지 않고 토스트를 노출한다", async () => {
     const { result } = renderHook(() => useSignupForm());
 
@@ -35,7 +55,7 @@ describe("useSignupForm Hook", () => {
 
     const fakeEvent = {
       preventDefault: vi.fn(),
-    } as unknown as React.SubmitEvent<HTMLFormElement>;
+    } as unknown as React.SubmitEvent;
 
     await act(async () => {
       await result.current.handleSignup(fakeEvent);
@@ -60,7 +80,7 @@ describe("useSignupForm Hook", () => {
 
     const fakeEvent = {
       preventDefault: vi.fn(),
-    } as unknown as React.SubmitEvent<HTMLFormElement>;
+    } as unknown as React.SubmitEvent;
 
     await act(async () => {
       await result.current.handleSignup(fakeEvent);
