@@ -5,13 +5,15 @@ import {
   useTodosQuery,
   useAddTodoMutation,
   useToggleTodoMutation,
+  useUpdateTodoMutation,
   useDeleteTodoMutation,
 } from "../api/useTodoQuery";
 
 export const useTodo = (widgetId: string) => {
-  const { data: todos = [] } = useTodosQuery(widgetId);
+  const { data: todos = [], isLoading } = useTodosQuery(widgetId);
   const addTodoMutation = useAddTodoMutation(widgetId);
   const toggleTodoMutation = useToggleTodoMutation(widgetId);
+  const updateTodoMutation = useUpdateTodoMutation(widgetId);
   const deleteTodoMutation = useDeleteTodoMutation(widgetId);
 
   const [inputText, setInputText] = useState("");
@@ -36,7 +38,10 @@ export const useTodo = (widgetId: string) => {
     addTodo: handleAddTodo,
     toggleTodo: (todoId: string, completed: boolean) =>
       toggleTodoMutation.mutate({ todoId, completed: !completed }),
+    editTodo: (todoId: string, text: string) =>
+      updateTodoMutation.mutate({ todoId, text }),
     deleteTodo: (todoId: string) => deleteTodoMutation.mutate(todoId),
     progressPercent,
+    isLoading,
   };
 };

@@ -1,13 +1,17 @@
 "use client";
 
-import { cn } from "@/shared/lib/utils";
-import { useDDayStore } from "../model/useDDayStore";
-import { DDayForm } from "./DDayForm";
+import { useMemo } from "react";
 import { Calendar } from "lucide-react";
-import { DDayItemCard } from "./DDayItemCard";
-import { useEffect, useMemo, useState } from "react";
-import { useFilterStore } from "@/features/dashboard-filter/model/useFilterStore";
+import { cn } from "@/shared/lib/utils";
 import { calculateDDay } from "@/shared/lib/formatters";
+import { useFilterStore } from "@/features/dashboard-filter/model/useFilterStore";
+import {
+  useDDaysQuery,
+  useAddDDayMutation,
+  useDeleteDDayMutation,
+} from "../api/useDDayQuery";
+import { DDayForm } from "./DDayForm";
+import { DDayItemCard } from "./DDayItemCard";
 
 interface DDayWidgetProps {
   widgetId: string;
@@ -18,10 +22,10 @@ export const DDayWidget = ({
   widgetId,
   isExpanded = false,
 }: DDayWidgetProps) => {
-  const [isMounted, setIsMounted] = useState(false);
-  const { getWidgetDDays, addDDay, removeDDay } = useDDayStore();
+  const { data: ddays = [], isLoading } = useDDaysQuery(widgetId);
+  const addDDayMutation = useAddDDayMutation(widgetId);
+  const deleteDDayMutation = useDeleteDDayMutation(widgetId);
   const { searchQuery } = useFilterStore();
-  const ddays = getWidgetDDays(widgetId);
 
   const filteredAndSortedDDays = useMemo(() => {
     let result = [...ddays];
@@ -34,8 +38,8 @@ export const DDayWidget = ({
     }
 
     return result.sort((a, b) => {
-      const diffA = calculateDDay(a.targetDate);
-      const diffB = calculateDDay(b.targetDate);
+      const diffA = calculateDDay(a.target_date);
+      const diffB = calculateDDay(b.target_date);
 
       if (diffA >= 0 && diffB < 0) return -1;
       if (diffA < 0 && diffB >= 0) return 1;
@@ -43,11 +47,7 @@ export const DDayWidget = ({
     });
   }, [ddays, searchQuery]);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
         불러오는 중..
@@ -57,7 +57,11 @@ export const DDayWidget = ({
 
   return (
     <div className="flex flex-col h-full">
-      <DDayForm onAdd={(title, date) => addDDay(widgetId, title, date)} />
+      <DDayForm
+        onAdd={(title, targetDate) =>
+          addDDayMutation.mutate({ title, targetDate })
+        }
+      />
 
       {filteredAndSortedDDays.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground text-xs gap-2 py-8">
@@ -86,10 +90,14 @@ export const DDayWidget = ({
         >
           {filteredAndSortedDDays.map((item) => (
             <DDayItemCard
-              key={item.id}
-              item={item}
+              key={item.dday_id}
+              item={{
+                id: item.dday_id,
+                title: item.title,
+                targetDate: item.target_date,
+              }}
               isExpanded={isExpanded}
-              onRemove={(id) => removeDDay(widgetId, id)}
+              onRemove={(ddayId) => deleteDDayMutation.mutate(ddayId)}
             />
           ))}
         </div>

@@ -3,6 +3,12 @@ import { todoRepository, TodoRow } from "./todoRepository";
 import { queryKeys } from "@/shared/config/queryKeys";
 import { toast } from "sonner";
 
+interface UpdateTodoParams {
+  todoId: string;
+  completed?: boolean;
+  text?: string;
+}
+
 interface MutationContext {
   previousTodos?: TodoRow[];
 }
@@ -19,12 +25,11 @@ export const useAddTodoMutation = (widgetId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation<TodoRow, Error, string, MutationContext>({
-    mutationFn: async (text: string) => {
+    mutationFn: (text: string) => {
       const currentTodos =
         queryClient.getQueryData<TodoRow[]>(
           queryKeys.todos.byWidget(widgetId),
         ) ?? [];
-
       const maxSortOrder =
         currentTodos.length > 0
           ? Math.max(...currentTodos.map((t) => t.sort_order))
@@ -73,7 +78,7 @@ export const useAddTodoMutation = (widgetId: string) => {
 
       return { previousTodos };
     },
-    onError: (err, _text, context) => {
+    onError: (err, _variables, context) => {
       if (context?.previousTodos) {
         queryClient.setQueryData<TodoRow[]>(
           queryKeys.todos.byWidget(widgetId),
@@ -90,18 +95,16 @@ export const useAddTodoMutation = (widgetId: string) => {
   });
 };
 
-export const useToggleTodoMutation = (widgetId: string) => {
+export const useUpdateTodoMutation = (widgetId: string) => {
   const queryClient = useQueryClient();
 
-  return useMutation<
-    TodoRow,
-    Error,
-    { todoId: string; completed: boolean },
-    MutationContext
-  >({
-    mutationFn: ({ todoId, completed }) =>
-      todoRepository.updateTodo(widgetId, todoId, { completed }),
-    onMutate: async ({ todoId, completed }) => {
+  return useMutation<TodoRow, Error, UpdateTodoParams, MutationContext>({
+    mutationFn: ({ todoId, completed, text }) =>
+      todoRepository.updateTodo(widgetId, todoId, {
+        ...(completed !== undefined && { completed }),
+        ...(text !== undefined && { text }),
+      }),
+    onMutate: async ({ todoId, completed, text }) => {
       await queryClient.cancelQueries({
         queryKey: queryKeys.todos.byWidget(widgetId),
       });
@@ -114,7 +117,13 @@ export const useToggleTodoMutation = (widgetId: string) => {
         queryClient.setQueryData<TodoRow[]>(
           queryKeys.todos.byWidget(widgetId),
           previousTodos.map((t) =>
-            t.todo_id === todoId ? { ...t, completed } : t,
+            t.todo_id === todoId
+              ? {
+                  ...t,
+                  ...(completed !== undefined && { completed }),
+                  ...(text !== undefined && { text }),
+                }
+              : t,
           ),
         );
       }
@@ -128,7 +137,7 @@ export const useToggleTodoMutation = (widgetId: string) => {
           context.previousTodos,
         );
       }
-      toast.error("할 일 상태 변경 실패", { description: err.message });
+      toast.error("할 일 수정 실패", { description: err.message });
     },
     onSettled: () => {
       queryClient.invalidateQueries({
@@ -136,6 +145,10 @@ export const useToggleTodoMutation = (widgetId: string) => {
       });
     },
   });
+};
+
+export const useToggleTodoMutation = (widgetId: string) => {
+  return useUpdateTodoMutation(widgetId);
 };
 
 export const useDeleteTodoMutation = (widgetId: string) => {
@@ -161,7 +174,7 @@ export const useDeleteTodoMutation = (widgetId: string) => {
 
       return { previousTodos };
     },
-    onError: (err, _todoId, context) => {
+    onError: (err, _variables, context) => {
       if (context?.previousTodos) {
         queryClient.setQueryData<TodoRow[]>(
           queryKeys.todos.byWidget(widgetId),

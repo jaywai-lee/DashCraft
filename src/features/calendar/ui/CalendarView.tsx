@@ -1,13 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useScheduleStore } from "../model/useScheduleStore";
+import { useCallback, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { Trash2 } from "lucide-react";
+import { Button } from "@/shared/ui/button";
+import { formatDateToYYYYMMDD } from "../lib/dateUtils";
 import { CalendarHeader } from "./CalendarHeader";
 import { CalendarGrid } from "./CalendarGrid";
 import { ScheduleItem } from "../model/types";
-import { Trash2 } from "lucide-react";
-import { Button } from "@/shared/ui/button";
-import dynamic from "next/dynamic";
+import {
+  useSchedulesQuery,
+  useAddScheduleMutation,
+  useUpdateScheduleMutation,
+  useDeleteScheduleMutation,
+} from "../api/useScheduleQuery";
 
 const ScheduleModal = dynamic(
   () => import("./ScheduleModal").then((mod) => mod.ScheduleModal),
@@ -15,7 +21,6 @@ const ScheduleModal = dynamic(
 );
 
 export const CalendarView = () => {
-  const [isMounted, setIsMounted] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
   const [editingSchedule, setEditingSchedule] = useState<ScheduleItem | null>(
@@ -23,14 +28,37 @@ export const CalendarView = () => {
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const schedules = useScheduleStore((s) => s.schedules);
-  const addSchedule = useScheduleStore((s) => s.addSchedule);
-  const updateSchedule = useScheduleStore((s) => s.updateSchedule);
-  const removeSchedule = useScheduleStore((s) => s.removeSchedule);
+  const { startDate, endDate } = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    const start = formatDateToYYYYMMDD(new Date(year, month - 1, 1));
+    const end = formatDateToYYYYMMDD(new Date(year, month + 2, 0));
+
+    return { startDate: start, endDate: end };
+  }, [currentDate]);
+
+  const { data: rawSchedules = [] } = useSchedulesQuery(startDate, endDate);
+  const addScheduleMutation = useAddScheduleMutation(startDate, endDate);
+  const updateScheduleMutation = useUpdateScheduleMutation(startDate, endDate);
+  const deleteScheduleMutation = useDeleteScheduleMutation(startDate, endDate);
+
+  const schedulesMap = useMemo(() => {
+    const map: Record<string, ScheduleItem[]> = {};
+
+    for (const item of rawSchedules) {
+      if (!map[item.date_str]) {
+        map[item.date_str] = [];
+      }
+      map[item.date_str].push({
+        id: item.schedule_id,
+        title: item.title,
+        time: item.time_str ?? undefined,
+      });
+    }
+
+    return map;
+  }, [rawSchedules]);
 
   const handlePrevYear = useCallback(
     () =>
@@ -61,6 +89,7 @@ export const CalendarView = () => {
     [],
   );
   const handleToday = useCallback(() => setCurrentDate(new Date()), []);
+
   const handleOpenAddModal = useCallback((dateStr: string) => {
     setSelectedDateStr(dateStr);
     setEditingSchedule(null);
@@ -85,20 +114,26 @@ export const CalendarView = () => {
     setSelectedDateStr(dateStr);
   }, []);
 
-  const handleRemoveSchedule = useCallback(
-    (dateStr: string, id: string) => {
-      removeSchedule(dateStr, id);
+  const handleAddSchedule = useCallback(
+    (dateStr: string, title: string, time?: string) => {
+      addScheduleMutation.mutate({ dateStr, title, time });
     },
-    [removeSchedule],
+    [addScheduleMutation],
   );
 
-  if (!isMounted) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px] text-xs text-muted-foreground animate-pulse">
-        달력을 불러오는 중..
-      </div>
-    );
-  }
+  const handleUpdateSchedule = useCallback(
+    (dateStr: string, id: string, title: string, time?: string) => {
+      updateScheduleMutation.mutate({ scheduleId: id, dateStr, title, time });
+    },
+    [updateScheduleMutation],
+  );
+
+  const handleRemoveSchedule = useCallback(
+    (_dateStr: string, id: string) => {
+      deleteScheduleMutation.mutate({ scheduleId: id });
+    },
+    [deleteScheduleMutation],
+  );
 
   return (
     <div className="p-4 max-w-[1400px] mx-auto space-y-4">
@@ -113,7 +148,7 @@ export const CalendarView = () => {
 
       <CalendarGrid
         currentDate={currentDate}
-        schedules={schedules}
+        schedules={schedulesMap}
         selectedDateStr={selectedDateStr}
         onSelectDate={handleSelectDate}
         onOpenModal={handleOpenAddModal}
@@ -126,8 +161,8 @@ export const CalendarView = () => {
         dateStr={selectedDateStr}
         editingSchedule={editingSchedule}
         onClose={handleCloseModal}
-        onAddSchedule={addSchedule}
-        onUpdateSchedule={updateSchedule}
+        onAddSchedule={handleAddSchedule}
+        onUpdateSchedule={handleUpdateSchedule}
       />
 
       {selectedDateStr && (
@@ -146,9 +181,9 @@ export const CalendarView = () => {
             </Button>
           </div>
 
-          {schedules[selectedDateStr]?.length ? (
+          {schedulesMap[selectedDateStr]?.length ? (
             <div className="space-y-2">
-              {schedules[selectedDateStr].map((item) => (
+              {schedulesMap[selectedDateStr].map((item) => (
                 <div
                   key={item.id}
                   onClick={() => handleOpenEditModal(selectedDateStr, item)}
@@ -169,7 +204,7 @@ export const CalendarView = () => {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      removeSchedule(selectedDateStr, item.id);
+                      handleRemoveSchedule(selectedDateStr, item.id);
                     }}
                     className="p-1.5 text-rose-500 hover:text-rose-700 rounded-md active:bg-rose-50 cursor-pointer"
                     title="삭제"

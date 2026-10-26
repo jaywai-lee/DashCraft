@@ -3,6 +3,7 @@ import { useClockStore } from "./useClockStore";
 
 describe("useClockStore", () => {
   const widgetId = "clock-test-1";
+  const defaultWorkDuration = 25 * 60;
 
   beforeEach(() => {
     useClockStore.setState({ states: {} });
@@ -22,17 +23,17 @@ describe("useClockStore", () => {
   it("타이머 토글 및 리셋 동작이 정상 수행되어야 한다", () => {
     useClockStore.getState().setMode(widgetId, "timer");
 
-    useClockStore.getState().toggleTimer(widgetId);
+    useClockStore.getState().toggleTimer(widgetId, defaultWorkDuration);
     let state = useClockStore.getState().getWidgetState(widgetId);
     expect(state.isRunning).toBe(true);
 
-    useClockStore.getState().toggleTimer(widgetId);
+    useClockStore.getState().toggleTimer(widgetId, defaultWorkDuration);
     state = useClockStore.getState().getWidgetState(widgetId);
     expect(state.isRunning).toBe(false);
 
-    useClockStore.getState().resetTimer(widgetId);
+    useClockStore.getState().resetTimer(widgetId, defaultWorkDuration);
     state = useClockStore.getState().getWidgetState(widgetId);
-    expect(state.timeLeft).toBe(25 * 60);
+    expect(state.timeLeft).toBe(defaultWorkDuration);
     expect(state.isRunning).toBe(false);
   });
 });
