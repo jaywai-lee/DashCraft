@@ -3,21 +3,18 @@
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input/Input";
 import { AuthCard } from "./AuthCard";
-import { TermsCheckbox } from "./TermsCheckbox";
 import { TermsModal } from "./TermsModal";
 import { useLoginForm } from "../model/useLoginForm";
 import { Mail, Lock } from "lucide-react";
-import { Input } from "@/shared/ui/input/Input";
 
-export const LoginFormView = () => {
+export const AuthFormView = () => {
   const {
     email,
     setEmail,
     password,
     setPassword,
-    agreed,
-    setAgreed,
     isLoading,
     modalType,
     setModalType,
@@ -29,17 +26,38 @@ export const LoginFormView = () => {
     <>
       <AuthCard
         title="DashCraft 로그인"
-        subtitle="워크스페이스에 접속하여 대시보드를 사용하세요"
+        subtitle="워크스페이스에 접속하여 대시보드를 이어서 사용하세요"
         footer={
-          <p className="text-[11px] text-muted-foreground">
-            계정이 없으신가요?{" "}
-            <Link
-              href="/signup"
-              className="text-primary font-semibold hover:underline"
-            >
-              회원가입
-            </Link>
-          </p>
+          <div className="space-y-2">
+            <p className="text-[11px] text-muted-foreground">
+              계정이 없으신가요?{" "}
+              <Link
+                href="/signup"
+                className="text-primary font-semibold hover:underline"
+              >
+                회원가입
+              </Link>
+            </p>
+            <p className="text-[10px] text-muted-foreground/80 leading-tight">
+              로그인 시 DashCraft의{" "}
+              <button
+                type="button"
+                onClick={() => setModalType("terms")}
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                이용약관
+              </button>{" "}
+              및{" "}
+              <button
+                type="button"
+                onClick={() => setModalType("privacy")}
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                개인정보처리방침
+              </button>
+              에 동의하게 됩니다.
+            </p>
+          </div>
         }
       >
         <form onSubmit={handleEmailLogin} className="space-y-3.5">
@@ -67,19 +85,11 @@ export const LoginFormView = () => {
             placeholder="••••••••"
           />
 
-          <TermsCheckbox
-            id="login-agree-terms"
-            checked={agreed}
-            onChange={setAgreed}
-            onOpenTerms={() => setModalType("terms")}
-            onOpenPrivacy={() => setModalType("privacy")}
-          />
-
           <Button
             type="submit"
             variant="primary"
             size="md"
-            disabled={!agreed || isLoading}
+            disabled={isLoading}
             isLoading={isLoading}
             className="w-full text-xs h-9"
           >
@@ -87,7 +97,7 @@ export const LoginFormView = () => {
           </Button>
         </form>
 
-        <div className="relative flex items-center justify-center border-t">
+        <div className="relative flex items-center justify-center border-t my-4">
           <span className="bg-background px-2 text-[10px] text-muted-foreground absolute font-mono">
             OR
           </span>
@@ -97,7 +107,7 @@ export const LoginFormView = () => {
           type="button"
           variant="outline"
           size="md"
-          disabled={!agreed}
+          disabled={isLoading}
           onClick={handleGoogleLogin}
           className="w-full text-xs h-9 gap-2"
         >

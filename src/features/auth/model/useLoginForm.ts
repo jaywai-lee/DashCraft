@@ -11,15 +11,13 @@ export const useLoginForm = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [agreed, setAgreed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [modalType, setModalType] = useState<"terms" | "privacy" | null>(null);
 
   const handleEmailLogin = async (e: React.SubmitEvent) => {
     e.preventDefault();
-    if (!agreed) return;
-
     setIsLoading(true);
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -39,8 +37,7 @@ export const useLoginForm = () => {
   };
 
   const handleGoogleLogin = async () => {
-    if (!agreed) return;
-
+    setIsLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -50,6 +47,7 @@ export const useLoginForm = () => {
 
     if (error) {
       toast.error("Google 로그인 중 오류가 발생했습니다.");
+      setIsLoading(false);
     }
   };
 
@@ -58,8 +56,6 @@ export const useLoginForm = () => {
     setEmail,
     password,
     setPassword,
-    agreed,
-    setAgreed,
     isLoading,
     modalType,
     setModalType,
