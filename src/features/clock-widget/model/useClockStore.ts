@@ -1,78 +1,63 @@
-"use client";
-
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type ClockMode = "clock" | "timer";
 export type TimerPhase = "work" | "break";
+export type ClockMode = "clock" | "timer";
 
-export interface ClockWidgetState {
+export interface ClockRuntimeState {
   mode: ClockMode;
   timerPhase: TimerPhase;
   timeLeft: number;
   isRunning: boolean;
-  workDuration: number;
-  breakDuration: number;
-  isSoundEnabled: boolean;
-  isNotificationEnabled: boolean;
-  startTimeStamp?: number | null;
-  targetEndTime?: number | null;
+  targetEndTime: number | null;
 }
 
-interface ClockStore {
-  states: Record<string, ClockWidgetState>;
-  getWidgetState: (widgetId: string) => ClockWidgetState;
+interface ClockWidgetRuntimeStore {
+  states: Record<string, ClockRuntimeState>;
+  getWidgetState: (widgetId: string) => ClockRuntimeState;
   setMode: (widgetId: string, mode: ClockMode) => void;
-  toggleTimer: (widgetId: string) => void;
-  resetTimer: (widgetId: string) => void;
-  syncTimeLeft: (widgetId: string, nextTimeLeft: number) => void;
-  switchPhase: (widgetId: string, phase: TimerPhase) => void;
-  toggleSound: (widgetId: string) => void;
-  toggleNotification: (widgetId: string) => void;
-  removeWidgetClock: (widgetId: string) => void;
+  toggleTimer: (widgetId: string, durationSec: number) => void;
+  resetTimer: (widgetId: string, durationSec: number) => void;
+  syncTimeLeft: (widgetId: string, timeLeft: number) => void;
+  switchPhase: (
+    widgetId: string,
+    phase: TimerPhase,
+    durationSec: number,
+  ) => void;
 }
 
-export const DEFAULT_STATE: ClockWidgetState = {
+export const DEFAULT_RUNTIME_STATE: ClockRuntimeState = {
   mode: "clock",
   timerPhase: "work",
   timeLeft: 25 * 60,
   isRunning: false,
-  workDuration: 25 * 60,
-  breakDuration: 5 * 60,
-  isSoundEnabled: true,
-  isNotificationEnabled: true,
-  startTimeStamp: null,
   targetEndTime: null,
 };
 
-export const useClockStore = create<ClockStore>()(
+export const useClockStore = create<ClockWidgetRuntimeStore>()(
   persist(
     (set, get) => ({
       states: {},
-
-      getWidgetState: (widgetId: string) => {
-        return get().states[widgetId] || DEFAULT_STATE;
+      getWidgetState: (widgetId) => {
+        return get().states[widgetId] ?? DEFAULT_RUNTIME_STATE;
       },
-
-      setMode: (widgetId: string, mode: ClockMode) =>
-        set((state) => {
-          const current = state.states[widgetId] || DEFAULT_STATE;
-          return {
-            states: {
-              ...state.states,
-              [widgetId]: { ...current, mode },
+      setMode: (widgetId, mode) => {
+        set((state) => ({
+          states: {
+            ...state.states,
+            [widgetId]: {
+              ...(state.states[widgetId] ?? DEFAULT_RUNTIME_STATE),
+              mode,
             },
-          };
-        }),
-
-      toggleTimer: (widgetId: string) =>
+          },
+        }));
+      },
+      toggleTimer: (widgetId, durationSec) => {
         set((state) => {
-          const current = state.states[widgetId] || DEFAULT_STATE;
-          const nextIsRunning = !current.isRunning;
-          const now = Date.now();
-
-          const targetEndTime = nextIsRunning
-            ? now + current.timeLeft * 1000
+          const current = state.states[widgetId] ?? DEFAULT_RUNTIME_STATE;
+          const willRun = !current.isRunning;
+          const targetEndTime = willRun
+            ? Date.now() + current.timeLeft * 1000
             : null;
 
           return {
@@ -80,118 +65,66 @@ export const useClockStore = create<ClockStore>()(
               ...state.states,
               [widgetId]: {
                 ...current,
-                isRunning: nextIsRunning,
-                startTimeStamp: nextIsRunning ? now : null,
+                isRunning: willRun,
                 targetEndTime,
+                ...(current.timeLeft === 0 && willRun
+                  ? {
+                      timeLeft: durationSec,
+                      targetEndTime: Date.now() + durationSec * 1000,
+                    }
+                  : {}),
               },
             },
           };
-        }),
-
-      resetTimer: (widgetId: string) =>
+        });
+      },
+      resetTimer: (widgetId, durationSec) => {
+        set((state) => ({
+          states: {
+            ...state.states,
+            [widgetId]: {
+              ...(state.states[widgetId] ?? DEFAULT_RUNTIME_STATE),
+              timeLeft: durationSec,
+              isRunning: false,
+              targetEndTime: null,
+            },
+          },
+        }));
+      },
+      syncTimeLeft: (widgetId, timeLeft) => {
         set((state) => {
-          const current = state.states[widgetId] || DEFAULT_STATE;
-          const initialTime =
-            current.timerPhase === "work"
-              ? current.workDuration
-              : current.breakDuration;
+          const current = state.states[widgetId] ?? DEFAULT_RUNTIME_STATE;
           return {
             states: {
               ...state.states,
               [widgetId]: {
                 ...current,
-                isRunning: false,
-                timeLeft: initialTime,
+                timeLeft,
+                ...(timeLeft === 0
+                  ? { isRunning: false, targetEndTime: null }
+                  : {}),
               },
             },
           };
-        }),
-
-      syncTimeLeft: (widgetId: string, nextTimeLeft: number) =>
-        set((state) => {
-          const current = state.states[widgetId] || DEFAULT_STATE;
-
-          if (current.timeLeft === nextTimeLeft) return state;
-          if (nextTimeLeft <= 0) {
-            return {
-              states: {
-                ...state.states,
-                [widgetId]: {
-                  ...current,
-                  timeLeft: 0,
-                  isRunning: false,
-                  startTimeStamp: null,
-                  targetEndTime: null,
-                },
-              },
-            };
-          }
-          return {
-            states: {
-              ...state.states,
-              [widgetId]: { ...current, timeLeft: nextTimeLeft },
+        });
+      },
+      switchPhase: (widgetId, phase, durationSec) => {
+        set((state) => ({
+          states: {
+            ...state.states,
+            [widgetId]: {
+              ...(state.states[widgetId] ?? DEFAULT_RUNTIME_STATE),
+              timerPhase: phase,
+              timeLeft: durationSec,
+              isRunning: false,
+              targetEndTime: null,
             },
-          };
-        }),
-
-      switchPhase: (widgetId: string, phase: TimerPhase) =>
-        set((state) => {
-          const current = state.states[widgetId] || DEFAULT_STATE;
-          const duration =
-            phase === "work" ? current.workDuration : current.breakDuration;
-          return {
-            states: {
-              ...state.states,
-              [widgetId]: {
-                ...current,
-                timerPhase: phase,
-                timeLeft: duration,
-                isRunning: false,
-                startTimeStamp: null,
-                targetEndTime: null,
-              },
-            },
-          };
-        }),
-
-      toggleSound: (widgetId: string) =>
-        set((state) => {
-          const current = state.states[widgetId] || DEFAULT_STATE;
-          return {
-            states: {
-              ...state.states,
-              [widgetId]: {
-                ...current,
-                isSoundEnabled: !current.isSoundEnabled,
-              },
-            },
-          };
-        }),
-
-      toggleNotification: (widgetId: string) =>
-        set((state) => {
-          const current = state.states[widgetId] || DEFAULT_STATE;
-          return {
-            states: {
-              ...state.states,
-              [widgetId]: {
-                ...current,
-                isNotificationEnabled: !current.isNotificationEnabled,
-              },
-            },
-          };
-        }),
-
-      removeWidgetClock: (widgetId: string) =>
-        set((state) => {
-          const newStates = { ...state.states };
-          delete newStates[widgetId];
-          return { states: newStates };
-        }),
+          },
+        }));
+      },
     }),
-
     {
-      name: "dashcraft-clock-storage",
+      name: "dashcraft-clock-runtime-v1",
     },
   ),
 );
