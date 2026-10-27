@@ -138,13 +138,6 @@ export const WidgetFrame = memo(
       </div>
     );
   },
-  (prev, next) =>
-    prev.id === next.id &&
-    prev.title === next.title &&
-    prev.color === next.color &&
-    prev.width === next.width &&
-    prev.dragHandleProps?.attributes === next.dragHandleProps?.attributes &&
-    prev.dragHandleProps?.listeners === next.dragHandleProps?.listeners,
 );
 
 WidgetFrame.displayName = "WidgetFrame";

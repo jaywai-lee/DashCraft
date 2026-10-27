@@ -33,7 +33,6 @@ export const useLoginForm = () => {
 
     toast.success("로그인되었습니다.");
     router.push("/dashboard");
-    router.refresh();
   };
 
   const handleGoogleLogin = async () => {
