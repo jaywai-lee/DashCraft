@@ -1,12 +1,11 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { Trash2 } from "lucide-react";
-import { Button } from "@/shared/ui/button";
-import { formatDateToYYYYMMDD } from "../lib/dateUtils";
+import { AppHeader } from "@/widgets/header/ui/AppHeader";
 import { CalendarHeader } from "./CalendarHeader";
 import { CalendarGrid } from "./CalendarGrid";
+import { formatDateToYYYYMMDD } from "../lib/dateUtils";
 import { ScheduleItem } from "../model/types";
 import {
   useSchedulesQuery,
@@ -45,7 +44,6 @@ export const CalendarView = () => {
 
   const schedulesMap = useMemo(() => {
     const map: Record<string, ScheduleItem[]> = {};
-
     for (const item of rawSchedules) {
       if (!map[item.date_str]) {
         map[item.date_str] = [];
@@ -56,7 +54,6 @@ export const CalendarView = () => {
         time: item.time_str ?? undefined,
       });
     }
-
     return map;
   }, [rawSchedules]);
 
@@ -136,7 +133,9 @@ export const CalendarView = () => {
   );
 
   return (
-    <div className="p-4 max-w-[1400px] mx-auto space-y-4">
+    <div className="min-h-screen bg-muted/20 text-foreground flex flex-col">
+      <AppHeader />
+
       <CalendarHeader
         currentDate={currentDate}
         onPrevYear={handlePrevYear}
@@ -146,81 +145,26 @@ export const CalendarView = () => {
         onToday={handleToday}
       />
 
-      <CalendarGrid
-        currentDate={currentDate}
-        schedules={schedulesMap}
-        selectedDateStr={selectedDateStr}
-        onSelectDate={handleSelectDate}
-        onOpenModal={handleOpenAddModal}
-        onEditSchedule={handleOpenEditModal}
-        onRemoveSchedule={handleRemoveSchedule}
-      />
+      <main className="flex-1 max-w-[1800px] w-full mx-auto p-4 sm:p-6 space-y-4">
+        <CalendarGrid
+          currentDate={currentDate}
+          schedules={schedulesMap}
+          selectedDateStr={selectedDateStr}
+          onSelectDate={handleSelectDate}
+          onOpenModal={handleOpenAddModal}
+          onEditSchedule={handleOpenEditModal}
+          onRemoveSchedule={handleRemoveSchedule}
+        />
 
-      <ScheduleModal
-        isOpen={isModalOpen}
-        dateStr={selectedDateStr}
-        editingSchedule={editingSchedule}
-        onClose={handleCloseModal}
-        onAddSchedule={handleAddSchedule}
-        onUpdateSchedule={handleUpdateSchedule}
-      />
-
-      {selectedDateStr && (
-        <div className="block sm:hidden bg-card border rounded-xl p-3.5 space-y-3 shadow-xs animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">
-              {selectedDateStr} 일정
-            </h3>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs px-2 cursor-pointer"
-              onClick={() => handleOpenAddModal(selectedDateStr)}
-            >
-              + 일정 추가
-            </Button>
-          </div>
-
-          {schedulesMap[selectedDateStr]?.length ? (
-            <div className="space-y-2">
-              {schedulesMap[selectedDateStr].map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => handleOpenEditModal(selectedDateStr, item)}
-                  className="p-2.5 bg-muted/40 border rounded-lg flex items-center justify-between active:bg-muted cursor-pointer transition-colors"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    {item.time && (
-                      <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs font-mono font-semibold rounded shrink-0">
-                        {item.time}
-                      </span>
-                    )}
-                    <span className="text-xs font-medium text-foreground truncate">
-                      {item.title}
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveSchedule(selectedDateStr, item.id);
-                    }}
-                    className="p-1.5 text-rose-500 hover:text-rose-700 rounded-md active:bg-rose-50 cursor-pointer"
-                    title="삭제"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground py-2 text-center">
-              등록된 일정이 없습니다.
-            </p>
-          )}
-        </div>
-      )}
+        <ScheduleModal
+          isOpen={isModalOpen}
+          dateStr={selectedDateStr}
+          editingSchedule={editingSchedule}
+          onClose={handleCloseModal}
+          onAddSchedule={handleAddSchedule}
+          onUpdateSchedule={handleUpdateSchedule}
+        />
+      </main>
     </div>
   );
 };
