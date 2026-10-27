@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useMemo } from "react";
-import { useSortable } from "@dnd-kit/sortable";
+import { useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "framer-motion";
 import { WidgetFrame } from "@/entities/widget/ui/WidgetFrame";
@@ -83,10 +83,7 @@ export const SortableWidget = memo(({ widget }: SortableWidgetProps) => {
     );
     if (currentIndex <= 0) return;
 
-    const reordered = [...widgets];
-    const [target] = reordered.splice(currentIndex, 1);
-    reordered.splice(currentIndex - 1, 0, target);
-
+    const reordered = arrayMove(widgets, currentIndex, currentIndex - 1);
     reorderWidgetsMutation.mutate(reordered.map((w) => w.widget_id));
   }, [widgets, widget.widget_id, reorderWidgetsMutation]);
 
@@ -96,10 +93,7 @@ export const SortableWidget = memo(({ widget }: SortableWidgetProps) => {
     );
     if (currentIndex === -1 || currentIndex >= widgets.length - 1) return;
 
-    const reordered = [...widgets];
-    const [target] = reordered.splice(currentIndex, 1);
-    reordered.splice(currentIndex + 1, 0, target);
-
+    const reordered = arrayMove(widgets, currentIndex, currentIndex + 1);
     reorderWidgetsMutation.mutate(reordered.map((w) => w.widget_id));
   }, [widgets, widget.widget_id, reorderWidgetsMutation]);
 
@@ -121,9 +115,7 @@ export const SortableWidget = memo(({ widget }: SortableWidgetProps) => {
       style={style}
       className={cn(
         "h-fit touch-none select-none relative transition-all duration-150",
-        isDragging
-          ? "z-0 opacity-25"
-          : "z-10 focus-within:z-[100] hover:z-[50]",
+        isDragging ? "z-0 opacity-25" : "z-10 focus-within:z-30 hover:z-20",
         colSpanClass,
       )}
     >

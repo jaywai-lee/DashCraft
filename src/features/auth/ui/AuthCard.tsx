@@ -1,12 +1,13 @@
+"use client";
+
 import React from "react";
-import Link from "next/link";
 import { LayoutGrid } from "lucide-react";
 
 interface AuthCardProps {
   title: string;
   subtitle: string;
   children: React.ReactNode;
-  footer: React.ReactNode;
+  footer?: React.ReactNode;
 }
 
 export const AuthCard = ({
@@ -16,22 +17,25 @@ export const AuthCard = ({
   footer,
 }: AuthCardProps) => {
   return (
-    <div className="min-h-screen bg-muted/20 flex flex-col justify-center items-center p-4">
-      <div className="w-full max-w-sm bg-background border rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
-        <div className="flex flex-col items-center space-y-2 text-center">
-          <Link
-            href="/"
-            className="p-2.5 bg-primary text-primary-foreground rounded-xl mb-1 hover:opacity-90 transition-opacity"
-          >
-            <LayoutGrid className="w-6 h-6" />
-          </Link>
-          <h1 className="text-xl font-bold tracking-tight">{title}</h1>
-          <p className="text-xs text-muted-foreground">{subtitle}</p>
+    <div className="min-h-screen flex items-center justify-center bg-muted/20 px-4 py-8 md:py-16">
+      <div className="w-full max-w-md md:max-w-lg lg:max-w-xl bg-background border rounded-3xl p-6 sm:p-8 md:p-10 shadow-xl space-y-6 md:space-y-8 transition-all">
+        <div className="text-center space-y-2 md:space-y-3">
+          <div className="inline-flex p-3 md:p-4 bg-primary text-primary-foreground rounded-2xl shadow-md mb-1">
+            <LayoutGrid className="w-6 h-6 md:w-8 md:h-8" />
+          </div>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-foreground">
+            {title}
+          </h1>
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground max-w-sm mx-auto leading-relaxed">
+            {subtitle}
+          </p>
         </div>
 
-        {children}
+        <div className="space-y-4 md:space-y-6">{children}</div>
 
-        <div className="pt-1 text-center">{footer}</div>
+        {footer && (
+          <div className="border-t pt-4 md:pt-6 text-center">{footer}</div>
+        )}
       </div>
     </div>
   );

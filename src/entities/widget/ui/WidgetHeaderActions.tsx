@@ -88,10 +88,6 @@ export const WidgetHeaderActions = memo(
       </div>
     );
   },
-  (prevProps, nextProps) =>
-    prevProps.id === nextProps.id &&
-    prevProps.color === nextProps.color &&
-    prevProps.width === nextProps.width,
 );
 
 WidgetHeaderActions.displayName = "WidgetHeaderActions";

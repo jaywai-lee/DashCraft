@@ -10,6 +10,7 @@ interface AddWidgetParams {
   title: string;
   color?: WidgetRow["color"];
   layout_w?: number;
+  widgetId?: string;
 }
 
 interface UpdateWidgetParams {
@@ -26,7 +27,7 @@ interface MutationContext {
 
 export const useWidgetsQuery = () => {
   return useQuery({
-    queryKey: queryKeys.widgets.list(),
+    queryKey: queryKeys.widgets.all,
     queryFn: () => dashboardRepository.fetchWidgets(),
   });
 };
@@ -35,22 +36,29 @@ export const useAddWidgetMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation<WidgetRow, Error, AddWidgetParams, MutationContext>({
-    mutationFn: async ({ type, title, color = "default", layout_w = 1 }) => {
+    mutationFn: async ({
+      type,
+      title,
+      color = "default",
+      layout_w = 1,
+      widgetId,
+    }) => {
+      const idToUse = widgetId || `widget-${crypto.randomUUID()}`;
+
       const currentWidgets =
-        queryClient.getQueryData<WidgetRow[]>(queryKeys.widgets.list()) ?? [];
+        queryClient.getQueryData<WidgetRow[]>(queryKeys.widgets.all) ?? [];
 
       const maxSortOrder =
         currentWidgets.length > 0
           ? Math.max(...currentWidgets.map((w) => w.sort_order))
           : 0;
       const nextSortOrder = maxSortOrder + 1;
-      const widgetId = crypto.randomUUID();
 
       const isClock = type === "clock";
       const config = isClock ? DEFAULT_CLOCK_CONFIG : {};
 
       return dashboardRepository.insertWidget({
-        widget_id: widgetId,
+        widget_id: idToUse,
         type,
         title,
         color,
@@ -64,38 +72,41 @@ export const useAddWidgetMutation = () => {
       });
     },
     onMutate: async (newWidgetParams) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.list() });
+      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.all });
 
       const previousWidgets = queryClient.getQueryData<WidgetRow[]>(
-        queryKeys.widgets.list(),
+        queryKeys.widgets.all,
       );
 
+      const maxSortOrder = previousWidgets?.length
+        ? Math.max(...previousWidgets.map((w) => w.sort_order))
+        : 0;
+
+      const widgetId =
+        newWidgetParams.widgetId || `widget-${crypto.randomUUID()}`;
+      newWidgetParams.widgetId = widgetId;
+
+      const optimisticWidget: WidgetRow = {
+        id: crypto.randomUUID(),
+        user_id: "",
+        widget_id: widgetId,
+        type: newWidgetParams.type,
+        title: newWidgetParams.title,
+        color: newWidgetParams.color ?? "default",
+        layout_w: newWidgetParams.layout_w ?? 1,
+        layout_h: 1,
+        layout_x: 0,
+        layout_y: 0,
+        sort_order: maxSortOrder + 1,
+        config: (newWidgetParams.type === "clock"
+          ? DEFAULT_CLOCK_CONFIG
+          : {}) as unknown as WidgetRow["config"],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
       if (previousWidgets) {
-        const maxSortOrder =
-          previousWidgets.length > 0
-            ? Math.max(...previousWidgets.map((w) => w.sort_order))
-            : 0;
-
-        const optimisticWidget: WidgetRow = {
-          id: crypto.randomUUID(),
-          user_id: "",
-          widget_id: crypto.randomUUID(),
-          type: newWidgetParams.type,
-          title: newWidgetParams.title,
-          color: newWidgetParams.color ?? "default",
-          layout_w: newWidgetParams.layout_w ?? 1,
-          layout_h: 1,
-          layout_x: 0,
-          layout_y: 0,
-          sort_order: maxSortOrder + 1,
-          config: (newWidgetParams.type === "clock"
-            ? DEFAULT_CLOCK_CONFIG
-            : {}) as unknown as WidgetRow["config"],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        queryClient.setQueryData<WidgetRow[]>(queryKeys.widgets.list(), [
+        queryClient.setQueryData<WidgetRow[]>(queryKeys.widgets.all, [
           ...previousWidgets,
           optimisticWidget,
         ]);
@@ -106,14 +117,14 @@ export const useAddWidgetMutation = () => {
     onError: (err, _variables, context) => {
       if (context?.previousWidgets) {
         queryClient.setQueryData<WidgetRow[]>(
-          queryKeys.widgets.list(),
+          queryKeys.widgets.all,
           context.previousWidgets,
         );
       }
       toast.error("위젯 추가 실패", { description: err.message });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.widgets.list() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.widgets.all });
     },
   });
 };
@@ -134,15 +145,15 @@ export const useUpdateWidgetMutation = () => {
       });
     },
     onMutate: async ({ widgetId, title, color, layout_w, config }) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.list() });
+      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.all });
 
       const previousWidgets = queryClient.getQueryData<WidgetRow[]>(
-        queryKeys.widgets.list(),
+        queryKeys.widgets.all,
       );
 
       if (previousWidgets) {
         queryClient.setQueryData<WidgetRow[]>(
-          queryKeys.widgets.list(),
+          queryKeys.widgets.all,
           previousWidgets.map((w) => {
             if (w.widget_id !== widgetId) return w;
             return {
@@ -166,14 +177,14 @@ export const useUpdateWidgetMutation = () => {
     onError: (err, _variables, context) => {
       if (context?.previousWidgets) {
         queryClient.setQueryData<WidgetRow[]>(
-          queryKeys.widgets.list(),
+          queryKeys.widgets.all,
           context.previousWidgets,
         );
       }
       toast.error("위젯 수정 실패", { description: err.message });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.widgets.list() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.widgets.all });
     },
   });
 };
@@ -185,15 +196,15 @@ export const useDeleteWidgetMutation = () => {
     mutationFn: (widgetId: string) =>
       dashboardRepository.deleteWidget(widgetId),
     onMutate: async (widgetId) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.list() });
+      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.all });
 
       const previousWidgets = queryClient.getQueryData<WidgetRow[]>(
-        queryKeys.widgets.list(),
+        queryKeys.widgets.all,
       );
 
       if (previousWidgets) {
         queryClient.setQueryData<WidgetRow[]>(
-          queryKeys.widgets.list(),
+          queryKeys.widgets.all,
           previousWidgets.filter((w) => w.widget_id !== widgetId),
         );
       }
@@ -203,14 +214,14 @@ export const useDeleteWidgetMutation = () => {
     onError: (err, _variables, context) => {
       if (context?.previousWidgets) {
         queryClient.setQueryData<WidgetRow[]>(
-          queryKeys.widgets.list(),
+          queryKeys.widgets.all,
           context.previousWidgets,
         );
       }
       toast.error("위젯 삭제 실패", { description: err.message });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.widgets.list() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.widgets.all });
     },
   });
 };
@@ -222,10 +233,10 @@ export const useReorderWidgetsMutation = () => {
     mutationFn: (widgetIds: string[]) =>
       dashboardRepository.reorderWidgets(widgetIds),
     onMutate: async (widgetIds) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.list() });
+      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.all });
 
       const previousWidgets = queryClient.getQueryData<WidgetRow[]>(
-        queryKeys.widgets.list(),
+        queryKeys.widgets.all,
       );
 
       if (previousWidgets) {
@@ -238,10 +249,7 @@ export const useReorderWidgetsMutation = () => {
           })
           .filter((w): w is WidgetRow => w !== null);
 
-        queryClient.setQueryData<WidgetRow[]>(
-          queryKeys.widgets.list(),
-          reordered,
-        );
+        queryClient.setQueryData<WidgetRow[]>(queryKeys.widgets.all, reordered);
       }
 
       return { previousWidgets };
@@ -249,14 +257,14 @@ export const useReorderWidgetsMutation = () => {
     onError: (err, _variables, context) => {
       if (context?.previousWidgets) {
         queryClient.setQueryData<WidgetRow[]>(
-          queryKeys.widgets.list(),
+          queryKeys.widgets.all,
           context.previousWidgets,
         );
       }
       toast.error("위젯 순서 변경 실패", { description: err.message });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.widgets.list() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.widgets.all });
     },
   });
 };
@@ -267,27 +275,27 @@ export const useResetDashboardMutation = () => {
   return useMutation<void, Error, void, MutationContext>({
     mutationFn: () => dashboardRepository.deleteAllWidgets(),
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.list() });
+      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.all });
 
       const previousWidgets = queryClient.getQueryData<WidgetRow[]>(
-        queryKeys.widgets.list(),
+        queryKeys.widgets.all,
       );
 
-      queryClient.setQueryData<WidgetRow[]>(queryKeys.widgets.list(), []);
+      queryClient.setQueryData<WidgetRow[]>(queryKeys.widgets.all, []);
 
       return { previousWidgets };
     },
     onError: (err, _variables, context) => {
       if (context?.previousWidgets) {
         queryClient.setQueryData<WidgetRow[]>(
-          queryKeys.widgets.list(),
+          queryKeys.widgets.all,
           context.previousWidgets,
         );
       }
       toast.error("대시보드 초기화 실패", { description: err.message });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.widgets.list() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.widgets.all });
     },
   });
 };
