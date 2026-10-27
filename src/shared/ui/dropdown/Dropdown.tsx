@@ -104,7 +104,7 @@ export const DropdownContent = ({
   return (
     <div
       className={cn(
-        "absolute top-full mt-2 w-56 sm:w-64 md:w-72 rounded-2xl border bg-popover p-2 text-popover-foreground shadow-2xl ring-1 ring-black/5 z-[100] animate-in fade-in-80 zoom-in-95",
+        "absolute top-full mt-1.5 w-48 sm:w-52 rounded-xl border bg-popover p-1.5 text-popover-foreground shadow-xl ring-1 ring-black/5 z-[100] animate-in fade-in-80 zoom-in-95",
         align === "right" ? "right-0" : "left-0",
         className,
       )}
@@ -135,7 +135,7 @@ export const DropdownItem = ({
       type="button"
       onClick={handleClick}
       className={cn(
-        "flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 md:px-4 md:py-3 text-xs md:text-sm font-semibold text-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer select-none",
+        "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer select-none",
         className,
       )}
     >
