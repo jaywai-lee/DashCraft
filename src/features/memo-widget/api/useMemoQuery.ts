@@ -5,7 +5,6 @@ import { sanitizeMemoHtml } from "@/shared/lib/sanitize";
 import { toast } from "sonner";
 
 interface UpsertMemoParams {
-  widgetId: string;
   content: string;
   highlight?: MemoRow["highlight"];
 }

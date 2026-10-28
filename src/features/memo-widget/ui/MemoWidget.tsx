@@ -6,12 +6,14 @@ import { sanitizeMemoHtml } from "@/shared/lib/sanitize";
 import { Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
-interface MemoWidgetProps {
+export interface MemoWidgetProps {
   widgetId: string;
+  isExpanded?: boolean;
 }
 
 const MAX_INNER_HTML_LENGTH = 10000;
 
+// 파라미터 구조 분해 할당에서 미사용 변수인 isExpanded 제거
 export const MemoWidget = ({ widgetId }: MemoWidgetProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const { data: memoData, isLoading } = useMemoQuery(widgetId);
@@ -39,9 +41,9 @@ export const MemoWidget = ({ widgetId }: MemoWidgetProps) => {
       if (sanitized === lastSavedContentRef.current) return;
 
       lastSavedContentRef.current = sanitized;
-      upsertMemoMutation.mutate({ widgetId, content: sanitized });
+      upsertMemoMutation.mutate({ content: sanitized });
     },
-    [widgetId, upsertMemoMutation],
+    [upsertMemoMutation],
   );
 
   const handleInput = () => {
@@ -109,7 +111,7 @@ export const MemoWidget = ({ widgetId }: MemoWidgetProps) => {
         onBlur={handleBlur}
         onFocus={handleFocus}
         data-placeholder="메모를 입력하세요..."
-        className="flex-1 w-full p-3 text-xs leading-relaxed focus:outline-none overflow-y-auto empty:before:content-[attr(placeholder)] empty:before:text-muted-foreground/60 empty:before:pointer-events-none"
+        className="flex-1 w-full p-3 text-xs leading-relaxed focus:outline-none overflow-y-auto empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/60 empty:before:pointer-events-none"
       />
 
       <div className="px-3 py-1 text-[10px] flex items-center justify-between text-muted-foreground border-t border-border/40 bg-muted/10">
