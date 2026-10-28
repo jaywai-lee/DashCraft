@@ -4,18 +4,11 @@ import React from "react";
 import Link from "next/link";
 import { useSettings } from "../model/useSettings";
 import { UserDropdown } from "@/widgets/header/ui/UserDropdown";
+import { ProfileSection } from "@/features/profile/ui/ProfileSection";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input/Input";
 import { Modal } from "@/shared/ui/modal";
-import {
-  User,
-  ShieldAlert,
-  Trash2,
-  Camera,
-  Lock,
-  KeyRound,
-  ArrowLeft,
-} from "lucide-react";
+import { ShieldAlert, Trash2, Lock, KeyRound, ArrowLeft } from "lucide-react";
 
 export const SettingsView = () => {
   const {
@@ -40,13 +33,12 @@ export const SettingsView = () => {
 
   return (
     <div className="min-h-screen bg-muted/20 pb-12">
-      {/* 상단 네비게이션 바 */}
       <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-[100] px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link href="/dashboard">
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2 text-xs sm:text-sm font-semibold hover:bg-accent"
+            className="gap-2 text-xs sm:text-sm font-semibold hover:bg-accent cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>대시보드로 돌아가기</span>
@@ -56,7 +48,6 @@ export const SettingsView = () => {
         <UserDropdown userEmail={userEmail} avatarUrl={avatarUrl} />
       </header>
 
-      {/* 설정 본문 */}
       <main className="max-w-4xl mx-auto py-8 md:py-12 px-4 sm:px-6 space-y-8">
         <div className="space-y-1.5 border-b pb-5">
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
@@ -67,48 +58,9 @@ export const SettingsView = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* 프로필 정보 카드 */}
-          <div className="bg-background border rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
-            <div className="flex items-center gap-2.5 border-b pb-4">
-              <User className="w-5 h-5 text-primary" />
-              <h2 className="text-base font-bold">내 프로필</h2>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          <ProfileSection userEmail={userEmail} initialAvatarUrl={avatarUrl} />
 
-            <div className="flex items-center gap-5">
-              <div className="relative group shrink-0">
-                <div className="w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center overflow-hidden">
-                  {avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      alt="프로필 이미지"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <User className="w-10 h-10 text-primary" />
-                  )}
-                </div>
-                <button
-                  type="button"
-                  className="absolute bottom-0 right-0 p-2 rounded-full bg-background border shadow-xs text-muted-foreground hover:text-foreground transition-colors"
-                  title="프로필 이미지 변경"
-                >
-                  <Camera className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="space-y-1">
-                <span className="text-xs font-medium text-muted-foreground">
-                  로그인 이메일 계정
-                </span>
-                <p className="text-base font-bold text-foreground break-all">
-                  {userEmail || "불러오는 중..."}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* 비밀번호 변경 카드 */}
           <div className="bg-background border rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
             <div className="flex items-center gap-2.5 border-b pb-4">
               <KeyRound className="w-5 h-5 text-primary" />
@@ -148,7 +100,7 @@ export const SettingsView = () => {
                 size="md"
                 disabled={isChangingPassword}
                 isLoading={isChangingPassword}
-                className="w-full text-xs sm:text-sm h-10 mt-2"
+                className="w-full text-xs sm:text-sm h-10 mt-2 cursor-pointer"
               >
                 비밀번호 업데이트
               </Button>
@@ -156,7 +108,6 @@ export const SettingsView = () => {
           </div>
         </div>
 
-        {/* 위험 영역 (Danger Zone) */}
         <div className="bg-destructive/5 border border-destructive/20 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm">
           <div className="flex items-center gap-2.5 border-b border-destructive/15 pb-4">
             <ShieldAlert className="w-5 h-5 text-destructive" />
@@ -175,7 +126,7 @@ export const SettingsView = () => {
               variant="outline"
               size="md"
               onClick={() => setIsDeleteModalOpen(true)}
-              className="border-destructive/30 text-destructive hover:bg-destructive/10 text-xs sm:text-sm shrink-0 h-10"
+              className="border-destructive/30 text-destructive hover:bg-destructive/10 text-xs sm:text-sm shrink-0 h-10 cursor-pointer"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               계정 삭제
@@ -183,7 +134,6 @@ export const SettingsView = () => {
           </div>
         </div>
 
-        {/* 회원 탈퇴 확인 모달 */}
         <Modal
           isOpen={isDeleteModalOpen}
           onClose={closeModal}
@@ -196,7 +146,7 @@ export const SettingsView = () => {
                 size="sm"
                 onClick={closeModal}
                 disabled={isDeleting}
-                className="text-xs"
+                className="text-xs cursor-pointer"
               >
                 취소
               </Button>
@@ -206,7 +156,7 @@ export const SettingsView = () => {
                 onClick={handleDeleteAccount}
                 disabled={!isEmailMatching || isDeleting}
                 isLoading={isDeleting}
-                className="bg-destructive hover:bg-destructive/90 text-white text-xs"
+                className="bg-destructive hover:bg-destructive/90 text-white text-xs cursor-pointer"
               >
                 계정 삭제 확인
               </Button>
