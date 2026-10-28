@@ -31,13 +31,24 @@ export const useAddTodoMutation = (widgetId: string) => {
 
   return useMutation<TodoRow, Error, AddTodoParams, MutationContext>({
     mutationKey: queryKeys.todos.byWidget(widgetId),
-    mutationFn: ({ text, todoId }) =>
-      todoRepository.insertTodo({
+    mutationFn: ({ text, todoId }) => {
+      const currentTodos =
+        queryClient.getQueryData<TodoRow[]>(
+          queryKeys.todos.byWidget(widgetId),
+        ) ?? [];
+      const nextSortOrder =
+        currentTodos.length > 0
+          ? Math.max(...currentTodos.map((t) => t.sort_order), 0) + 1
+          : 1;
+
+      return todoRepository.insertTodo({
         widget_id: widgetId,
         todo_id: todoId,
         text,
         completed: false,
-      }),
+        sort_order: nextSortOrder,
+      });
+    },
     onMutate: async ({ text, todoId }) => {
       await queryClient.cancelQueries({
         queryKey: queryKeys.todos.byWidget(widgetId),
@@ -47,6 +58,11 @@ export const useAddTodoMutation = (widgetId: string) => {
         queryKeys.todos.byWidget(widgetId),
       );
 
+      const nextSortOrder =
+        previousTodos && previousTodos.length > 0
+          ? Math.max(...previousTodos.map((t) => t.sort_order), 0) + 1
+          : 1;
+
       const optimisticTodo: TodoRow = {
         id: crypto.randomUUID(),
         user_id: "",
@@ -54,7 +70,7 @@ export const useAddTodoMutation = (widgetId: string) => {
         todo_id: todoId,
         text,
         completed: false,
-        sort_order: (previousTodos?.length ?? 0) + 1,
+        sort_order: nextSortOrder,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };

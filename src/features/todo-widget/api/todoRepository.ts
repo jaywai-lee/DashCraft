@@ -12,7 +12,8 @@ export const todoRepository = {
       .from("todos")
       .select("*")
       .eq("widget_id", widgetId)
-      .order("sort_order", { ascending: true });
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
 
     if (error) throw error;
     return data ?? [];
@@ -33,7 +34,7 @@ export const todoRepository = {
   async updateTodo(
     widgetId: string,
     todoId: string,
-    updates: TodoUpdate,
+    updates: Partial<Pick<TodoRow, "text" | "completed" | "sort_order">>,
   ): Promise<TodoRow> {
     const supabase = createClient();
     const { data, error } = await supabase

@@ -1,128 +1,134 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useMemoQuery, useUpsertMemoMutation } from "../api/useMemoQuery";
-import { flushMemoKeepalive } from "../api/memoKeepalive";
-import { cn } from "@/shared/lib/utils";
-import { useTextHighLighter } from "@/shared/lib/useTextHighlighter";
-import { HighlightPicker } from "@/shared/ui/highlight-picker/HighlightPicker";
+import { sanitizeMemoHtml } from "@/shared/lib/sanitize";
+import { Loader2, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface MemoWidgetProps {
   widgetId: string;
-  isExpanded?: boolean;
 }
 
-const getPlainTextLength = (element: HTMLDivElement | null) => {
-  if (!element) return 0;
-  return element.innerText.replace(/[\s\u200B]/g, "").length;
-};
+const MAX_INNER_HTML_LENGTH = 10000;
 
-export const MemoWidget = ({
-  widgetId,
-  isExpanded = false,
-}: MemoWidgetProps) => {
-  const { data: memo } = useMemoQuery(widgetId);
-  const upsertMutation = useUpsertMemoMutation(widgetId);
-
+export const MemoWidget = ({ widgetId }: MemoWidgetProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
-  const [textLength, setTextLength] = useState(0);
+  const { data: memoData, isLoading } = useMemoQuery(widgetId);
+  const upsertMemoMutation = useUpsertMemoMutation(widgetId);
+
+  const [contentLength, setContentLength] = useState(0);
+  const lastSavedContentRef = useRef<string>("");
+  const isFocusedRef = useRef(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const htmlContent = memo?.content ?? "";
-  const currentHighlight = memo?.highlight ?? "none";
-  const dirtyRef = useRef(false);
-  const latestRef = useRef({ widgetId, highlight: currentHighlight });
-  latestRef.current = { widgetId, highlight: currentHighlight };
-
-  const { applyHighlight, exitHighlightOnKey } = useTextHighLighter(
-    editorRef,
-    (newHtml) => {
-      saveMemo(newHtml, currentHighlight);
-    },
-  );
-
   useEffect(() => {
-    if (
-      editorRef.current &&
-      editorRef.current.innerHTML !== htmlContent &&
-      document.activeElement !== editorRef.current
-    ) {
-      editorRef.current.innerHTML = htmlContent;
-      setTextLength(getPlainTextLength(editorRef.current));
+    if (memoData && editorRef.current && !isFocusedRef.current) {
+      const sanitized = sanitizeMemoHtml(memoData.content || "");
+      if (editorRef.current.innerHTML !== sanitized) {
+        editorRef.current.innerHTML = sanitized;
+        lastSavedContentRef.current = sanitized;
+        setContentLength(sanitized.length);
+      }
     }
-  }, [htmlContent]);
+  }, [memoData]);
 
-  const saveMemo = (content: string, highlight = currentHighlight) => {
-    dirtyRef.current = true;
-    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    debounceTimerRef.current = setTimeout(() => {
-      upsertMutation.mutate(
-        { content, highlight },
-        {
-          onSuccess: () => {
-            dirtyRef.current = false;
-          },
-        },
-      );
-    }, 800);
-  };
+  const saveContent = useCallback(
+    (currentHtml: string) => {
+      const sanitized = sanitizeMemoHtml(currentHtml);
+      if (sanitized === lastSavedContentRef.current) return;
 
-  useEffect(() => {
-    const flush = () => {
-      if (!dirtyRef.current || !editorRef.current) return;
-      flushMemoKeepalive(
-        latestRef.current.widgetId,
-        editorRef.current.innerHTML,
-        latestRef.current.highlight,
-      );
-      dirtyRef.current = false;
-    };
-
-    const onHidden = () => {
-      if (document.visibilityState === "hidden") flush();
-    };
-
-    window.addEventListener("visibilitychange", onHidden);
-    window.addEventListener("pagehide", flush);
-
-    return () => {
-      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-      flush();
-      window.removeEventListener("visibilitychange", onHidden);
-      window.removeEventListener("pagehide", flush);
-    };
-  }, []);
+      lastSavedContentRef.current = sanitized;
+      upsertMemoMutation.mutate({ widgetId, content: sanitized });
+    },
+    [widgetId, upsertMemoMutation],
+  );
 
   const handleInput = () => {
     if (!editorRef.current) return;
+
     const currentHtml = editorRef.current.innerHTML;
 
-    setTextLength(getPlainTextLength(editorRef.current));
-    saveMemo(currentHtml);
+    if (currentHtml.length > MAX_INNER_HTML_LENGTH) {
+      toast.warning("메모 용량 한도(10,000자)에 도달했습니다.");
+      const truncated = currentHtml.slice(0, MAX_INNER_HTML_LENGTH);
+      editorRef.current.innerHTML = truncated;
+      setContentLength(truncated.length);
+      return;
+    }
+
+    setContentLength(currentHtml.length);
+
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      saveContent(currentHtml);
+    }, 800);
   };
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const pastedText =
+      e.clipboardData.getData("text/html") ||
+      e.clipboardData.getData("text/plain");
+    const sanitizedPaste = sanitizeMemoHtml(pastedText);
+
+    document.execCommand("insertHTML", false, sanitizedPaste);
+    handleInput();
+  };
+
+  const handleBlur = () => {
+    isFocusedRef.current = false;
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    if (editorRef.current) {
+      saveContent(editorRef.current.innerHTML);
+    }
+  };
+
+  const handleFocus = () => {
+    isFocusedRef.current = true;
+  };
+
+  const isNearLimit = contentLength > MAX_INNER_HTML_LENGTH * 0.85;
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-full min-h-[140px] flex items-center justify-center text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={cn(
-        "flex flex-col w-full h-full pt-3 px-3 gap-1 transition-all duration-200",
-        isExpanded ? "min-h-[320px]" : "min-h-[180px]",
-      )}
-    >
+    <div className="flex flex-col h-full w-full relative group">
       <div
         ref={editorRef}
         contentEditable
-        onInput={handleInput}
-        onKeyDown={exitHighlightOnKey}
         suppressContentEditableWarning
-        data-placeholder="자유롭게 메모를 작성하고 드래그하여 형광펜을 칠해보세요"
-        className={cn(
-          "w-full flex-1 resize-none bg-transparent text-sm leading-relaxed text-foreground focus:outline-none overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20",
-          "empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:cursor-text",
-        )}
+        onInput={handleInput}
+        onPaste={handlePaste}
+        onBlur={handleBlur}
+        onFocus={handleFocus}
+        data-placeholder="메모를 입력하세요..."
+        className="flex-1 w-full p-3 text-xs leading-relaxed focus:outline-none overflow-y-auto empty:before:content-[attr(placeholder)] empty:before:text-muted-foreground/60 empty:before:pointer-events-none"
       />
-      <div className="flex justify-between items-center text-[10px] text-muted-foreground border-t border-border/40 pt-1 px-0.5 mt-auto shrink-0">
-        <HighlightPicker onSelectColor={applyHighlight} />
-        <span>{textLength}자</span>
+
+      <div className="px-3 py-1 text-[10px] flex items-center justify-between text-muted-foreground border-t border-border/40 bg-muted/10">
+        <span
+          className={
+            isNearLimit
+              ? "text-amber-500 font-semibold flex items-center gap-1"
+              : ""
+          }
+        >
+          {isNearLimit && <AlertCircle className="w-3 h-3" />}
+          {contentLength.toLocaleString()} /{" "}
+          {MAX_INNER_HTML_LENGTH.toLocaleString()} 자
+        </span>
+        {upsertMemoMutation.isPending && (
+          <span className="text-[10px] text-primary flex items-center gap-1">
+            <Loader2 className="w-2.5 h-2.5 animate-spin" /> 저장 중...
+          </span>
+        )}
       </div>
     </div>
   );
