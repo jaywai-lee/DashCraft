@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState } from "react";
 import { ThemeProvider } from "./ThemeProvider";
+import { AuthSync } from "./AuthSync";
 
 interface PostgrestErrorLike {
   code?: string;
@@ -34,6 +35,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <AuthSync />
         {children}
       </ThemeProvider>
       <ReactQueryDevtools initialIsOpen={false} />

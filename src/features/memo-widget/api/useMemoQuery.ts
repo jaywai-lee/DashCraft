@@ -3,7 +3,7 @@ import { memoRepository, MemoRow } from "./memoRepository";
 import { queryKeys } from "@/shared/config/queryKeys";
 import { toast } from "sonner";
 
-interface UpdateMemoParams {
+interface UpsertMemoParams {
   content: string;
   highlight?: MemoRow["highlight"];
 }
@@ -23,10 +23,11 @@ export const useMemoQuery = (widgetId: string) => {
 export const useUpsertMemoMutation = (widgetId: string) => {
   const queryClient = useQueryClient();
 
-  return useMutation<MemoRow, Error, UpdateMemoParams, MutationContext>({
+  return useMutation<MemoRow, Error, UpsertMemoParams, MutationContext>({
+    mutationKey: queryKeys.memos.byWidget(widgetId),
     mutationFn: ({ content, highlight = "none" }) =>
       memoRepository.upsertMemo(widgetId, content, highlight),
-    onMutate: async ({ content, highlight }) => {
+    onMutate: async ({ content, highlight = "none" }) => {
       await queryClient.cancelQueries({
         queryKey: queryKeys.memos.byWidget(widgetId),
       });
@@ -40,7 +41,7 @@ export const useUpsertMemoMutation = (widgetId: string) => {
         user_id: previousMemo?.user_id ?? "",
         widget_id: widgetId,
         content,
-        highlight: highlight ?? previousMemo?.highlight ?? "none",
+        highlight,
         updated_at: new Date().toISOString(),
       };
 
@@ -61,9 +62,15 @@ export const useUpsertMemoMutation = (widgetId: string) => {
       toast.error("메모 저장 실패", { description: err.message });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.memos.byWidget(widgetId),
-      });
+      if (
+        queryClient.isMutating({
+          mutationKey: queryKeys.memos.byWidget(widgetId),
+        }) === 1
+      ) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.memos.byWidget(widgetId),
+        });
+      }
     },
   });
 };

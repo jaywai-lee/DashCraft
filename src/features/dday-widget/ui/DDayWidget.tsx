@@ -59,7 +59,11 @@ export const DDayWidget = ({
     <div className="flex flex-col h-full">
       <DDayForm
         onAdd={(title, targetDate) =>
-          addDDayMutation.mutate({ title, targetDate })
+          addDDayMutation.mutate({
+            title,
+            targetDate,
+            ddayId: crypto.randomUUID(),
+          })
         }
       />
 

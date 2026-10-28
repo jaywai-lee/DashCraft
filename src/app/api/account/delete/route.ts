@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       error: userError,
     } = await supabase.auth.getUser();
 
-    if (userError || !user) {
+    if (userError || !user || !user.email) {
       return NextResponse.json(
         { error: "인증되지 않은 요청입니다." },
         { status: 401 },
@@ -40,7 +40,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const { confirmEmail } = body;
 
-    if (!confirmEmail || confirmEmail !== user.email) {
+    const normalizedInputEmail =
+      typeof confirmEmail === "string" ? confirmEmail.trim().toLowerCase() : "";
+    const normalizedUserEmail = user.email.trim().toLowerCase();
+
+    if (!normalizedInputEmail || normalizedInputEmail !== normalizedUserEmail) {
       return NextResponse.json(
         { error: "확인 이메일 주소가 일치하지 않습니다." },
         { status: 400 },
@@ -49,8 +53,11 @@ export async function POST(request: NextRequest) {
 
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceRoleKey) {
+      console.error(
+        "[Account Delete API Error] SUPABASE_SERVICE_ROLE_KEY is not configured.",
+      );
       return NextResponse.json(
-        { error: "서버 설정 오류: SERVICE_ROLE_KEY가 설정되지 않았습니다." },
+        { error: "서버 오류가 발생했습니다." },
         { status: 500 },
       );
     }
@@ -71,8 +78,12 @@ export async function POST(request: NextRequest) {
     );
 
     if (deleteError) {
+      console.error(
+        "[Account Delete API Error] Delete user failed:",
+        deleteError.message,
+      );
       return NextResponse.json(
-        { error: `계정 삭제 실패: ${deleteError.message}` },
+        { error: "계정 삭제에 실패했습니다." },
         { status: 500 },
       );
     }
@@ -82,8 +93,10 @@ export async function POST(request: NextRequest) {
       message: "계정이 성공적으로 삭제되었습니다.",
     });
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[Account Delete API Error] Unexpected exception:", err);
+    return NextResponse.json(
+      { error: "서버 오류가 발생했습니다." },
+      { status: 500 },
+    );
   }
 }

@@ -22,7 +22,10 @@ export const useTodo = (widgetId: string) => {
     e.preventDefault();
     if (!inputText.trim()) return;
 
-    addTodoMutation.mutate(inputText.trim());
+    addTodoMutation.mutate({
+      text: inputText.trim(),
+      todoId: crypto.randomUUID(),
+    });
     setInputText("");
   };
 

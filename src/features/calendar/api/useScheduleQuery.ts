@@ -7,6 +7,7 @@ interface AddScheduleParams {
   dateStr: string;
   title: string;
   time?: string;
+  scheduleId: string;
 }
 
 interface UpdateScheduleParams {
@@ -36,14 +37,15 @@ export const useAddScheduleMutation = (startDate: string, endDate: string) => {
   const queryClient = useQueryClient();
 
   return useMutation<ScheduleRow, Error, AddScheduleParams, MutationContext>({
-    mutationFn: ({ dateStr, title, time }) =>
+    mutationKey: queryKeys.schedules.range(startDate, endDate),
+    mutationFn: ({ dateStr, title, time, scheduleId }) =>
       scheduleRepository.insertSchedule({
-        schedule_id: crypto.randomUUID(),
+        schedule_id: scheduleId,
         date_str: dateStr,
         title,
         time_str: time ?? null,
       }),
-    onMutate: async ({ dateStr, title, time }) => {
+    onMutate: async ({ dateStr, title, time, scheduleId }) => {
       await queryClient.cancelQueries({
         queryKey: queryKeys.schedules.range(startDate, endDate),
       });
@@ -52,24 +54,22 @@ export const useAddScheduleMutation = (startDate: string, endDate: string) => {
         queryKeys.schedules.range(startDate, endDate),
       );
 
-      if (previousSchedules) {
-        const optimisticSchedule: ScheduleRow = {
-          id: crypto.randomUUID(),
-          user_id: "",
-          schedule_id: crypto.randomUUID(),
-          date_str: dateStr,
-          title,
-          time_str: time ?? null,
-          color: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
+      const optimisticSchedule: ScheduleRow = {
+        id: crypto.randomUUID(),
+        user_id: "",
+        schedule_id: scheduleId,
+        date_str: dateStr,
+        title,
+        time_str: time ?? null,
+        color: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-        queryClient.setQueryData<ScheduleRow[]>(
-          queryKeys.schedules.range(startDate, endDate),
-          [...previousSchedules, optimisticSchedule],
-        );
-      }
+      queryClient.setQueryData<ScheduleRow[]>(
+        queryKeys.schedules.range(startDate, endDate),
+        (old = []) => [...old, optimisticSchedule],
+      );
 
       return { previousSchedules };
     },
@@ -83,9 +83,15 @@ export const useAddScheduleMutation = (startDate: string, endDate: string) => {
       toast.error("일정 추가 실패", { description: err.message });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.schedules.all,
-      });
+      if (
+        queryClient.isMutating({
+          mutationKey: queryKeys.schedules.range(startDate, endDate),
+        }) === 1
+      ) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.schedules.all,
+        });
+      }
     },
   });
 };
@@ -98,6 +104,7 @@ export const useUpdateScheduleMutation = (
 
   return useMutation<ScheduleRow, Error, UpdateScheduleParams, MutationContext>(
     {
+      mutationKey: queryKeys.schedules.range(startDate, endDate),
       mutationFn: ({ scheduleId, title, time }) =>
         scheduleRepository.updateSchedule(scheduleId, {
           title,
@@ -135,9 +142,15 @@ export const useUpdateScheduleMutation = (
         toast.error("일정 수정 실패", { description: err.message });
       },
       onSettled: () => {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.schedules.all,
-        });
+        if (
+          queryClient.isMutating({
+            mutationKey: queryKeys.schedules.range(startDate, endDate),
+          }) === 1
+        ) {
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.schedules.all,
+          });
+        }
       },
     },
   );
@@ -150,6 +163,7 @@ export const useDeleteScheduleMutation = (
   const queryClient = useQueryClient();
 
   return useMutation<void, Error, DeleteScheduleParams, MutationContext>({
+    mutationKey: queryKeys.schedules.range(startDate, endDate),
     mutationFn: ({ scheduleId }) =>
       scheduleRepository.deleteSchedule(scheduleId),
     onMutate: async ({ scheduleId }) => {
@@ -180,9 +194,15 @@ export const useDeleteScheduleMutation = (
       toast.error("일정 삭제 실패", { description: err.message });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.schedules.all,
-      });
+      if (
+        queryClient.isMutating({
+          mutationKey: queryKeys.schedules.range(startDate, endDate),
+        }) === 1
+      ) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.schedules.all,
+        });
+      }
     },
   });
 };

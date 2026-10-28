@@ -65,7 +65,10 @@ export const useSettings = () => {
   };
 
   const handleDeleteAccount = async () => {
-    if (confirmEmailInput !== userEmail) {
+    const isEmailMatching =
+      confirmEmailInput.trim().toLowerCase() === userEmail.trim().toLowerCase();
+
+    if (!isEmailMatching) {
       toast.error("이메일 주소가 일치하지 않습니다.");
       return;
     }
@@ -75,7 +78,9 @@ export const useSettings = () => {
       const response = await fetch("/api/account/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmEmail: confirmEmailInput }),
+        body: JSON.stringify({
+          confirmEmail: confirmEmailInput.trim().toLowerCase(),
+        }),
       });
 
       const result = await response.json();
