@@ -1,60 +1,125 @@
 import { renderHook, act } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useProfileAvatar } from "./useProfileAvatar";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: vi.fn() }),
-}));
+const mockGetUser = vi.fn();
+const mockUpdateUser = vi.fn();
+const mockStorageList = vi.fn();
+const mockStorageUpload = vi.fn();
+const mockStorageRemove = vi.fn();
+const mockToastSuccess = vi.fn();
+const mockToastError = vi.fn();
+const mockResizeImageToWebP = vi.fn();
 
-vi.mock("sonner", () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
-}));
-
-vi.mock("@/shared/lib/supabase/client", () => ({
+vi.mock("@/shared/lib/client", () => ({
   createClient: () => ({
     auth: {
-      getUser: vi.fn().mockResolvedValue({
-        data: { user: { id: "user-123" } },
-      }),
-      updateUser: vi.fn().mockResolvedValue({ error: null }),
+      getUser: mockGetUser,
+      updateUser: mockUpdateUser,
     },
     storage: {
       from: () => ({
-        upload: vi.fn().mockResolvedValue({ error: null }),
-        getPublicUrl: () => ({
-          data: { publicUrl: "https://example.co/avatar.png" },
-        }),
-        list: vi.fn().mockResolvedValue({ data: [{ name: "avatar.png" }] }),
-        remove: vi.fn().mockResolvedValue({ error: null }),
+        list: mockStorageList,
+        upload: mockStorageUpload,
+        remove: mockStorageRemove,
       }),
     },
   }),
 }));
 
+vi.mock("@/shared/lib/imageResizer", () => ({
+  resizeImageToWebP: (...args: unknown[]) => mockResizeImageToWebP(...args),
+}));
+
+vi.mock("sonner", () => ({
+  toast: {
+    error: (...args: unknown[]) => mockToastError(...args),
+    success: (...args: unknown[]) => mockToastSuccess(...args),
+  },
+}));
+
 describe("useProfileAvatar Hook", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  it("초기 아바타 URL 상태가 올바르게 설정되어야 한다", () => {
-    const { result } = renderHook(() =>
-      useProfileAvatar("https://example.co/initial.png"),
-    );
-    expect(result.current.avatarUrl).toBe("https://example.co/initial.png");
-  });
-
-  it("허용되지 않은 파일 형식 선택 시 업로드가 거부되어야 한다", async () => {
-    const { result } = renderHook(() => useProfileAvatar());
-    const invalidFile = new File(["test"], "test.pdf", {
-      type: "application/pdf",
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: "test-user-id" } },
     });
+    mockStorageList.mockResolvedValue({ data: [] });
+    mockResizeImageToWebP.mockResolvedValue(
+      new Blob(["fake-webp"], { type: "image/webp" }),
+    );
+  });
+
+  it("초기 상태값이 올바르게 설정되어야 한다", () => {
+    const { result } = renderHook(() => useProfileAvatar());
+
+    expect(result.current.isUploading).toBe(false);
+    expect(typeof result.current.uploadAvatar).toBe("function");
+    expect(typeof result.current.deleteAvatar).toBe("function");
+  });
+
+  it("이미지 파일 업로드 성공 시 새 파일 경로를 반환하고 user_metadata를 업데이트해야 한다", async () => {
+    mockStorageList.mockResolvedValueOnce({ data: [{ name: "old.webp" }] });
+    mockStorageUpload.mockResolvedValueOnce({ error: null });
+    mockStorageRemove.mockResolvedValueOnce({ error: null });
+    mockUpdateUser.mockResolvedValueOnce({ error: null });
+
+    const { result } = renderHook(() => useProfileAvatar());
+
+    const fakeFile = new File(["dummy"], "avatar.png", { type: "image/png" });
+
+    let filePath: string | null = null;
+    await act(async () => {
+      filePath = await result.current.uploadAvatar(fakeFile);
+    });
+
+    expect(filePath).toMatch(/^test-user-id\/\d+\.webp$/);
+    expect(mockStorageUpload).toHaveBeenCalled();
+    expect(mockStorageRemove).toHaveBeenCalledWith(["test-user-id/old.webp"]);
+    expect(mockUpdateUser).toHaveBeenCalledWith({
+      data: { avatar_path: filePath },
+    });
+    expect(mockToastSuccess).toHaveBeenCalledWith(
+      "프로필 이미지가 변경되었습니다.",
+    );
+  });
+
+  it("아바타 삭제 시 스토리지 파일 제거 및 avatar_path null 처리가 수행되어야 한다", async () => {
+    mockStorageList.mockResolvedValueOnce({ data: [{ name: "current.webp" }] });
+    mockStorageRemove.mockResolvedValueOnce({ error: null });
+    mockUpdateUser.mockResolvedValueOnce({ error: null });
+
+    const { result } = renderHook(() => useProfileAvatar());
 
     await act(async () => {
-      await result.current.handleUploadAvatar({
-        target: { files: [invalidFile] },
-      } as unknown as React.ChangeEvent<HTMLInputElement>);
+      await result.current.deleteAvatar();
     });
 
-    expect(result.current.avatarUrl).toBeUndefined();
+    expect(mockStorageRemove).toHaveBeenCalledWith([
+      "test-user-id/current.webp",
+    ]);
+    expect(mockUpdateUser).toHaveBeenCalledWith({
+      data: { avatar_path: null },
+    });
+    expect(mockToastSuccess).toHaveBeenCalledWith(
+      "프로필 이미지가 기본 상태로 초기화되었습니다.",
+    );
+  });
+
+  it("업로드 도중 오류가 발생하면 실패 토스트를 출력하고 null을 반환한다", async () => {
+    mockStorageUpload.mockResolvedValueOnce({
+      error: { message: "Upload failed" },
+    });
+
+    const { result } = renderHook(() => useProfileAvatar());
+    const fakeFile = new File(["dummy"], "avatar.png", { type: "image/png" });
+
+    let filePath: string | null = null;
+    await act(async () => {
+      filePath = await result.current.uploadAvatar(fakeFile);
+    });
+
+    expect(filePath).toBeNull();
+    expect(mockToastError).toHaveBeenCalledWith("Upload failed");
   });
 });

@@ -53,9 +53,7 @@ export async function POST(request: NextRequest) {
 
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceRoleKey) {
-      console.error(
-        "[Account Delete API Error] SUPABASE_SERVICE_ROLE_KEY is not configured.",
-      );
+      console.error("[Account Delete API Error] SERVICE_ROLE_KEY missing.");
       return NextResponse.json(
         { error: "서버 오류가 발생했습니다." },
         { status: 500 },
@@ -72,6 +70,24 @@ export async function POST(request: NextRequest) {
         },
       },
     );
+
+    const { data: avatarFiles } = await supabaseAdmin.storage
+      .from("avatars")
+      .list(user.id);
+
+    if (avatarFiles && avatarFiles.length > 0) {
+      const filePaths = avatarFiles.map((f) => `${user.id}/${f.name}`);
+      const { error: storageRemoveError } = await supabaseAdmin.storage
+        .from("avatars")
+        .remove(filePaths);
+
+      if (storageRemoveError) {
+        console.error(
+          "[Account Delete API Error] Storage cleanup failed:",
+          storageRemoveError.message,
+        );
+      }
+    }
 
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(
       user.id,

@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/shared/lib/client";
+import { getAvatarPublicUrl } from "@/shared/lib/avatar";
 import { toast } from "sonner";
 
 export const useSettings = () => {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const supabase = createClient();
 
@@ -22,20 +21,33 @@ export const useSettings = () => {
   const [confirmEmailInput, setConfirmEmailInput] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        if (user.email) setUserEmail(user.email);
-        if (user.user_metadata?.avatar_url) {
-          setAvatarUrl(user.user_metadata.avatar_url);
-        }
-      }
-    };
-    fetchUser();
+  const refreshUser = useCallback(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      if (user.email) setUserEmail(user.email);
+      setAvatarUrl(getAvatarPublicUrl(user.user_metadata));
+    }
   }, [supabase]);
+
+  useEffect(() => {
+    void refreshUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        if (session.user.email) setUserEmail(session.user.email);
+        setAvatarUrl(getAvatarPublicUrl(session.user.user_metadata));
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase, refreshUser]);
 
   const handleChangePassword = async (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -51,7 +63,9 @@ export const useSettings = () => {
     }
 
     setIsChangingPassword(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
     setIsChangingPassword(false);
 
     if (error) {
@@ -90,7 +104,7 @@ export const useSettings = () => {
       queryClient.clear();
       await supabase.auth.signOut();
       toast.success("계정이 성공적으로 삭제되었습니다.");
-      router.push("/login");
+      window.location.href = "/login";
     } catch (err) {
       const message =
         err instanceof Error
@@ -110,6 +124,7 @@ export const useSettings = () => {
   return {
     userEmail,
     avatarUrl,
+    refreshUser,
     newPassword,
     setNewPassword,
     confirmPassword,
