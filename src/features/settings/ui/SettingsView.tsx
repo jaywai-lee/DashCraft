@@ -57,10 +57,10 @@ export const SettingsView = () => {
 
           <form onSubmit={handleChangePassword} className="space-y-3.5">
             <Input
-              label="새 비밀번호 (6자 이상)"
+              label="새 비밀번호 (8자 이상)"
               type="password"
               required
-              minLength={6}
+              minLength={8}
               icon={Lock}
               value={newPassword}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -73,7 +73,7 @@ export const SettingsView = () => {
               label="새 비밀번호 확인"
               type="password"
               required
-              minLength={6}
+              minLength={8}
               icon={Lock}
               value={confirmPassword}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>

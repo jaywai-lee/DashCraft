@@ -75,10 +75,10 @@ export const SignupFormView = () => {
             />
 
             <Input
-              label="비밀번호 (6자 이상)"
+              label="비밀번호 (8자 이상)"
               type="password"
               required
-              minLength={6}
+              minLength={8}
               icon={Lock}
               value={password}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>

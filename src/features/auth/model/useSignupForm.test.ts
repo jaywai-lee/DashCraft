@@ -44,12 +44,12 @@ describe("useSignupForm Hook", () => {
     expect(mockSignUp).not.toHaveBeenCalled();
   });
 
-  it("비밀번호가 6자 미만이면 회원가입 요청을 보내지 않고 토스트를 노출한다", async () => {
+  it("비밀번호가 8자 미만이면 회원가입 요청을 보내지 않고 토스트를 노출한다", async () => {
     const { result } = renderHook(() => useSignupForm());
 
     act(() => {
       result.current.setEmail("newuser@example.com");
-      result.current.setPassword("12345");
+      result.current.setPassword("1234567");
       result.current.setAgreed(true);
     });
 
@@ -62,7 +62,7 @@ describe("useSignupForm Hook", () => {
     });
 
     expect(mockToastError).toHaveBeenCalledWith(
-      "비밀번호는 최소 6자 이상이어야 합니다.",
+      "비밀번호는 최소 8자 이상이어야 합니다.",
     );
     expect(mockSignUp).not.toHaveBeenCalled();
   });
