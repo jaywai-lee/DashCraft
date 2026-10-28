@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { createClient } from "@/shared/lib/client";
+import { toast } from "sonner";
 
 export const useResetPasswordForm = () => {
   const router = useRouter();
@@ -12,6 +12,32 @@ export const useResetPasswordForm = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+
+      if (event === "PASSWORD_RECOVERY" || session?.user) {
+        return;
+      }
+
+      if ((event === "INITIAL_SESSION" || event === "SIGNED_OUT") && !session) {
+        toast.error("유효한 비밀번호 재설정 세션이 없습니다.", {
+          description: "비밀번호 재설정 링크를 다시 요청해주세요.",
+        });
+        router.replace("/forgot-password");
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase, router]);
 
   const handleResetPassword = async (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -22,11 +48,12 @@ export const useResetPasswordForm = () => {
     }
 
     if (password !== confirmPassword) {
-      toast.error("비밀번호가 일치하지 않습니다.");
+      toast.error("비밀번호 확인이 일치하지 않습니다.");
       return;
     }
 
     setIsLoading(true);
+
     const { error } = await supabase.auth.updateUser({
       password,
     });
@@ -39,8 +66,7 @@ export const useResetPasswordForm = () => {
     }
 
     toast.success("비밀번호가 성공적으로 변경되었습니다.");
-    router.push("/login");
-    router.refresh();
+    router.push("/dashboard");
   };
 
   return {

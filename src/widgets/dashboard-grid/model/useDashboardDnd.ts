@@ -1,27 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   DragEndEvent,
+  DragOverEvent,
   DragStartEvent,
-  closestCenter,
+  pointerWithin,
   PointerSensor,
   TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
+import { toast } from "sonner";
 import { WidgetRow } from "../api/dashboardRepository";
 import {
   useWidgetsQuery,
   useReorderWidgetsMutation,
 } from "../api/useDashboardQuery";
 
+const RAPID_SWAP_THRESHOLD = 6;
+const RESET_INTERVAL_MS = 400;
+
 export const useDashboardDnD = () => {
   const { data: widgets = [] } = useWidgetsQuery();
   const reorderMutation = useReorderWidgetsMutation();
 
+  const [draggedWidgets, setDraggedWidgets] = useState<WidgetRow[] | null>(
+    null,
+  );
   const [activeWidget, setActiveWidget] = useState<WidgetRow | null>(null);
+
+  const lastOverIdRef = useRef<string | number | null>(null);
+  const swapCountRef = useRef<number>(0);
+  const lastResetTimeRef = useRef<number>(Date.now());
+
+  const localWidgets = draggedWidgets ?? widgets;
 
   const pointerSensor = useSensor(PointerSensor, {
     activationConstraint: { distance: 5 },
@@ -35,9 +49,43 @@ export const useDashboardDnD = () => {
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    const foundWidget = widgets.find((w) => w.widget_id === active.id);
+    const foundWidget = localWidgets.find((w) => w.widget_id === active.id);
     if (foundWidget) {
       setActiveWidget(foundWidget);
+      setDraggedWidgets(widgets);
+      lastOverIdRef.current = active.id;
+      swapCountRef.current = 0;
+      lastResetTimeRef.current = Date.now();
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    if (lastOverIdRef.current === over.id) return;
+
+    const now = Date.now();
+    if (now - lastResetTimeRef.current > RESET_INTERVAL_MS) {
+      swapCountRef.current = 0;
+      lastResetTimeRef.current = now;
+    }
+
+    swapCountRef.current += 1;
+
+    if (swapCountRef.current > RAPID_SWAP_THRESHOLD) {
+      toast.warning("과도한 움직임이 감지되었습니다.", {
+        id: "dnd-rapid-warning",
+      });
+      handleDragCancel();
+      return;
+    }
+
+    const oldIndex = localWidgets.findIndex((w) => w.widget_id === active.id);
+    const newIndex = localWidgets.findIndex((w) => w.widget_id === over.id);
+
+    if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+      lastOverIdRef.current = over.id;
+      setDraggedWidgets(arrayMove(localWidgets, oldIndex, newIndex));
     }
   };
 
@@ -45,29 +93,36 @@ export const useDashboardDnD = () => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = widgets.findIndex((w) => w.widget_id === active.id);
-      const newIndex = widgets.findIndex((w) => w.widget_id === over.id);
+      const oldIndex = localWidgets.findIndex((w) => w.widget_id === active.id);
+      const newIndex = localWidgets.findIndex((w) => w.widget_id === over.id);
 
-      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-        const reordered = arrayMove(widgets, oldIndex, newIndex);
-        reorderMutation.mutate(reordered.map((w) => w.widget_id));
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const updated = arrayMove(localWidgets, oldIndex, newIndex);
+        reorderMutation.mutate(updated.map((w) => w.widget_id));
       }
     }
 
+    setDraggedWidgets(null);
     setActiveWidget(null);
+    lastOverIdRef.current = null;
+    swapCountRef.current = 0;
   };
 
   const handleDragCancel = () => {
+    setDraggedWidgets(null);
     setActiveWidget(null);
+    lastOverIdRef.current = null;
+    swapCountRef.current = 0;
   };
 
   return {
     sensors,
-    localWidgets: widgets,
+    localWidgets,
     activeWidget,
     handleDragStart,
+    handleDragOver,
     handleDragEnd,
     handleDragCancel,
-    collisionDetection: closestCenter,
+    collisionDetection: pointerWithin,
   };
 };

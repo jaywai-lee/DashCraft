@@ -118,6 +118,7 @@ describe("Dashboard Query Hooks", () => {
       type: "memo",
       title: "메모",
       color: "blue",
+      widgetId: "w-2",
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));

@@ -86,7 +86,7 @@ describe("Todo Query Hooks", () => {
       id: "2",
       user_id: "user-1",
       widget_id: widgetId,
-      todo_id: "t-2",
+      todo_id: "test-todo-1",
       text: "새로운 할 일",
       completed: false,
       sort_order: 1,
@@ -100,16 +100,19 @@ describe("Todo Query Hooks", () => {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate("새로운 할 일");
+    result.current.mutate({
+      text: "새로운 할 일",
+      todoId: "test-todo-1",
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(todoRepository.insertTodo).toHaveBeenCalledWith(
       expect.objectContaining({
         widget_id: widgetId,
+        todo_id: "test-todo-1",
         text: "새로운 할 일",
         completed: false,
-        sort_order: 1,
       }),
     );
   });

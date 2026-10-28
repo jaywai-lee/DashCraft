@@ -30,6 +30,9 @@ export const MemoWidget = ({
 
   const htmlContent = memo?.content ?? "";
   const currentHighlight = memo?.highlight ?? "none";
+  const dirtyRef = useRef(false);
+  const latestRef = useRef({ widgetId, highlight: currentHighlight });
+  latestRef.current = { widgetId, highlight: currentHighlight };
 
   const { applyHighlight, exitHighlightOnKey } = useTextHighLighter(
     editorRef,
@@ -50,40 +53,45 @@ export const MemoWidget = ({
   }, [htmlContent]);
 
   const saveMemo = (content: string, highlight = currentHighlight) => {
+    dirtyRef.current = true;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-
     debounceTimerRef.current = setTimeout(() => {
-      upsertMutation.mutate({ content, highlight });
+      upsertMutation.mutate(
+        { content, highlight },
+        {
+          onSuccess: () => {
+            dirtyRef.current = false;
+          },
+        },
+      );
     }, 800);
   };
 
   useEffect(() => {
-    const handleFlush = () => {
-      if (editorRef.current) {
-        flushMemoKeepalive(
-          widgetId,
-          editorRef.current.innerHTML,
-          currentHighlight,
-        );
-      }
+    const flush = () => {
+      if (!dirtyRef.current || !editorRef.current) return;
+      flushMemoKeepalive(
+        latestRef.current.widgetId,
+        editorRef.current.innerHTML,
+        latestRef.current.highlight,
+      );
+      dirtyRef.current = false;
     };
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        handleFlush();
-      }
+    const onHidden = () => {
+      if (document.visibilityState === "hidden") flush();
     };
 
-    window.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("pagehide", handleFlush);
+    window.addEventListener("visibilitychange", onHidden);
+    window.addEventListener("pagehide", flush);
 
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-      handleFlush();
-      window.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("pagehide", handleFlush);
+      flush();
+      window.removeEventListener("visibilitychange", onHidden);
+      window.removeEventListener("pagehide", flush);
     };
-  }, [widgetId, currentHighlight]);
+  }, []);
 
   const handleInput = () => {
     if (!editorRef.current) return;

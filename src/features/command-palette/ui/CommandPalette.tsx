@@ -30,6 +30,7 @@ export const CommandPalette = () => {
       type: config.type,
       title: config.title,
       layout_w: 1,
+      widgetId: crypto.randomUUID(),
     });
     setIsOpen(false);
   };

@@ -113,7 +113,12 @@ export const CalendarView = () => {
 
   const handleAddSchedule = useCallback(
     (dateStr: string, title: string, time?: string) => {
-      addScheduleMutation.mutate({ dateStr, title, time });
+      addScheduleMutation.mutate({
+        dateStr,
+        title,
+        time,
+        scheduleId: crypto.randomUUID(),
+      });
     },
     [addScheduleMutation],
   );
