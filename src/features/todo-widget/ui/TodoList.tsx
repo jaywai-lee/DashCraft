@@ -53,12 +53,14 @@ const TodoItem = memo(
       setIsEditing(false);
     };
 
+    const handleCancel = () => {
+      setEditText(todo.text);
+      setIsEditing(false);
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
       if (e.key === "Enter") handleSave();
-      if (e.key === "Escape") {
-        setEditText(todo.text);
-        setIsEditing(false);
-      }
+      if (e.key === "Escape") handleCancel();
     };
 
     return (
@@ -75,8 +77,10 @@ const TodoItem = memo(
               className="flex-1 min-w-0 bg-background border rounded px-2 text-xs h-7 outline-none focus:ring-1 focus:ring-primary"
             />
             <div className="flex items-center shrink-0 ml-auto gap-0.5">
+              {/* onMouseDown={(e) => e.preventDefault()}로 input blur 선발동 차단 */}
               <button
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={handleSave}
                 className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-primary/10 text-primary transition-colors shrink-0 cursor-pointer"
                 aria-label="저장"
@@ -85,10 +89,8 @@ const TodoItem = memo(
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setEditText(todo.text);
-                  setIsEditing(false);
-                }}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleCancel}
                 className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground transition-colors shrink-0 cursor-pointer"
                 aria-label="취소"
               >

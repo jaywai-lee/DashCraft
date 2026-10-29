@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { DEFAULT_RUNTIME_STATE, useClockStore } from "./useClockStore";
 import {
   useWidgetsQuery,
@@ -21,7 +21,11 @@ export const usePomodoroTimer = (widgetId: string) => {
   const updateWidgetMutation = useUpdateWidgetMutation();
 
   const currentWidget = widgets.find((w) => w.widget_id === widgetId);
-  const rawConfig = (currentWidget?.config as Record<string, unknown>) ?? {};
+
+  const rawConfig = useMemo(
+    () => (currentWidget?.config as Record<string, unknown>) ?? {},
+    [currentWidget?.config],
+  );
 
   const workDuration =
     typeof rawConfig.workDuration === "number"
@@ -88,7 +92,7 @@ export const usePomodoroTimer = (widgetId: string) => {
 
   useEffect(() => {
     if (prevTimeLeftRef.current > 0 && timeLeft === 0) {
-      stopWhiteNoise();
+      stopWhiteNoise(widgetId);
 
       if (isSoundEnabled) {
         playCompletionSound();
@@ -127,11 +131,15 @@ export const usePomodoroTimer = (widgetId: string) => {
 
   useEffect(() => {
     if (isRunning && timerPhase === "work" && isSoundEnabled) {
-      startWhiteNoise();
+      startWhiteNoise(widgetId);
     } else {
-      stopWhiteNoise();
+      stopWhiteNoise(widgetId);
     }
-  }, [isRunning, timerPhase, isSoundEnabled]);
+
+    return () => {
+      stopWhiteNoise(widgetId);
+    };
+  }, [isRunning, timerPhase, isSoundEnabled, widgetId]);
 
   const handleNotificationToggle = useCallback(async () => {
     if (!isNotificationEnabled) {
