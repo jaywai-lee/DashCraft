@@ -1,13 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { scheduleRepository, ScheduleRow } from "./scheduleRepository";
 import { queryKeys } from "@/shared/config/queryKeys";
-import { toast } from "sonner";
+import { createOptimisticMutation } from "@/shared/lib/react-query/optimisticHelper";
 
 interface AddScheduleParams {
   dateStr: string;
   title: string;
   time?: string;
-  scheduleId: string;
+  scheduleId?: string;
 }
 
 interface UpdateScheduleParams {
@@ -21,10 +21,6 @@ interface DeleteScheduleParams {
   scheduleId: string;
 }
 
-interface MutationContext {
-  previousSchedules?: ScheduleRow[];
-}
-
 export const useSchedulesQuery = (startDate: string, endDate: string) => {
   return useQuery({
     queryKey: queryKeys.schedules.range(startDate, endDate),
@@ -35,65 +31,39 @@ export const useSchedulesQuery = (startDate: string, endDate: string) => {
 
 export const useAddScheduleMutation = (startDate: string, endDate: string) => {
   const queryClient = useQueryClient();
+  const queryKey = queryKeys.schedules.range(startDate, endDate);
 
-  return useMutation<ScheduleRow, Error, AddScheduleParams, MutationContext>({
-    mutationKey: queryKeys.schedules.range(startDate, endDate),
-    mutationFn: ({ dateStr, title, time, scheduleId }) =>
-      scheduleRepository.insertSchedule({
-        schedule_id: scheduleId,
-        date_str: dateStr,
-        title,
-        time_str: time ?? null,
-      }),
-    onMutate: async ({ dateStr, title, time, scheduleId }) => {
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.schedules.range(startDate, endDate),
-      });
-
-      const previousSchedules = queryClient.getQueryData<ScheduleRow[]>(
-        queryKeys.schedules.range(startDate, endDate),
-      );
-
-      const optimisticSchedule: ScheduleRow = {
-        id: crypto.randomUUID(),
-        user_id: "",
-        schedule_id: scheduleId,
-        date_str: dateStr,
-        title,
-        time_str: time ?? null,
-        color: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      queryClient.setQueryData<ScheduleRow[]>(
-        queryKeys.schedules.range(startDate, endDate),
-        (old = []) => [...old, optimisticSchedule],
-      );
-
-      return { previousSchedules };
-    },
-    onError: (err, _variables, context) => {
-      if (context?.previousSchedules) {
-        queryClient.setQueryData<ScheduleRow[]>(
-          queryKeys.schedules.range(startDate, endDate),
-          context.previousSchedules,
-        );
-      }
-      toast.error("일정 추가 실패", { description: err.message });
-    },
-    onSettled: () => {
-      if (
-        queryClient.isMutating({
-          mutationKey: queryKeys.schedules.range(startDate, endDate),
-        }) === 1
-      ) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.schedules.all,
-        });
-      }
-    },
-  });
+  return useMutation(
+    createOptimisticMutation<ScheduleRow, AddScheduleParams, ScheduleRow[]>({
+      queryClient,
+      queryKey,
+      mutationFn: ({ dateStr, title, time, scheduleId }) =>
+        scheduleRepository.insertSchedule({
+          schedule_id: scheduleId ?? crypto.randomUUID(),
+          date_str: dateStr,
+          title,
+          time_str: time ?? null,
+        }),
+      updateCache: (
+        oldSchedules = [],
+        { dateStr, title, time, scheduleId },
+      ) => {
+        const optimisticSchedule: ScheduleRow = {
+          id: crypto.randomUUID(),
+          user_id: "",
+          schedule_id: scheduleId ?? crypto.randomUUID(),
+          date_str: dateStr,
+          title,
+          time_str: time ?? null,
+          color: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        return [...oldSchedules, optimisticSchedule];
+      },
+      errorMessage: "일정 추가 실패",
+    }),
+  );
 };
 
 export const useUpdateScheduleMutation = (
@@ -101,58 +71,25 @@ export const useUpdateScheduleMutation = (
   endDate: string,
 ) => {
   const queryClient = useQueryClient();
+  const queryKey = queryKeys.schedules.range(startDate, endDate);
 
-  return useMutation<ScheduleRow, Error, UpdateScheduleParams, MutationContext>(
-    {
-      mutationKey: queryKeys.schedules.range(startDate, endDate),
+  return useMutation(
+    createOptimisticMutation<ScheduleRow, UpdateScheduleParams, ScheduleRow[]>({
+      queryClient,
+      queryKey,
       mutationFn: ({ scheduleId, title, time }) =>
         scheduleRepository.updateSchedule(scheduleId, {
           title,
           time_str: time ?? null,
         }),
-      onMutate: async ({ scheduleId, title, time }) => {
-        await queryClient.cancelQueries({
-          queryKey: queryKeys.schedules.range(startDate, endDate),
-        });
-
-        const previousSchedules = queryClient.getQueryData<ScheduleRow[]>(
-          queryKeys.schedules.range(startDate, endDate),
-        );
-
-        if (previousSchedules) {
-          queryClient.setQueryData<ScheduleRow[]>(
-            queryKeys.schedules.range(startDate, endDate),
-            previousSchedules.map((s) =>
-              s.schedule_id === scheduleId
-                ? { ...s, title, time_str: time ?? null }
-                : s,
-            ),
-          );
-        }
-
-        return { previousSchedules };
-      },
-      onError: (err, _variables, context) => {
-        if (context?.previousSchedules) {
-          queryClient.setQueryData<ScheduleRow[]>(
-            queryKeys.schedules.range(startDate, endDate),
-            context.previousSchedules,
-          );
-        }
-        toast.error("일정 수정 실패", { description: err.message });
-      },
-      onSettled: () => {
-        if (
-          queryClient.isMutating({
-            mutationKey: queryKeys.schedules.range(startDate, endDate),
-          }) === 1
-        ) {
-          queryClient.invalidateQueries({
-            queryKey: queryKeys.schedules.all,
-          });
-        }
-      },
-    },
+      updateCache: (oldSchedules = [], { scheduleId, title, time }) =>
+        oldSchedules.map((s) =>
+          s.schedule_id === scheduleId
+            ? { ...s, title, time_str: time ?? null }
+            : s,
+        ),
+      errorMessage: "일정 수정 실패",
+    }),
   );
 };
 
@@ -161,48 +98,17 @@ export const useDeleteScheduleMutation = (
   endDate: string,
 ) => {
   const queryClient = useQueryClient();
+  const queryKey = queryKeys.schedules.range(startDate, endDate);
 
-  return useMutation<void, Error, DeleteScheduleParams, MutationContext>({
-    mutationKey: queryKeys.schedules.range(startDate, endDate),
-    mutationFn: ({ scheduleId }) =>
-      scheduleRepository.deleteSchedule(scheduleId),
-    onMutate: async ({ scheduleId }) => {
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.schedules.range(startDate, endDate),
-      });
-
-      const previousSchedules = queryClient.getQueryData<ScheduleRow[]>(
-        queryKeys.schedules.range(startDate, endDate),
-      );
-
-      if (previousSchedules) {
-        queryClient.setQueryData<ScheduleRow[]>(
-          queryKeys.schedules.range(startDate, endDate),
-          previousSchedules.filter((s) => s.schedule_id !== scheduleId),
-        );
-      }
-
-      return { previousSchedules };
-    },
-    onError: (err, _variables, context) => {
-      if (context?.previousSchedules) {
-        queryClient.setQueryData<ScheduleRow[]>(
-          queryKeys.schedules.range(startDate, endDate),
-          context.previousSchedules,
-        );
-      }
-      toast.error("일정 삭제 실패", { description: err.message });
-    },
-    onSettled: () => {
-      if (
-        queryClient.isMutating({
-          mutationKey: queryKeys.schedules.range(startDate, endDate),
-        }) === 1
-      ) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.schedules.all,
-        });
-      }
-    },
-  });
+  return useMutation(
+    createOptimisticMutation<void, DeleteScheduleParams, ScheduleRow[]>({
+      queryClient,
+      queryKey,
+      mutationFn: ({ scheduleId }) =>
+        scheduleRepository.deleteSchedule(scheduleId),
+      updateCache: (oldSchedules = [], { scheduleId }) =>
+        oldSchedules.filter((s) => s.schedule_id !== scheduleId),
+      errorMessage: "일정 삭제 실패",
+    }),
+  );
 };
