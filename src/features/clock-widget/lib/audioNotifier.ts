@@ -5,7 +5,8 @@ import { toast } from "sonner";
 let audioCtx: AudioContext | null = null;
 let noiseNode: AudioBufferSourceNode | null = null;
 let gainNode: GainNode | null = null;
-let isNoisePlaying = false;
+
+const activeWhiteNoiseWidgets = new Set<string>();
 
 function getAudioContext(): AudioContext {
   if (!audioCtx) {
@@ -16,13 +17,15 @@ function getAudioContext(): AudioContext {
     audioCtx = new AudioContextClass();
   }
   if (audioCtx.state === "suspended") {
-    audioCtx.resume();
+    void audioCtx.resume();
   }
   return audioCtx;
 }
 
-export function startWhiteNoise(volume = 0.04) {
-  if (isNoisePlaying) return;
+export function startWhiteNoise(widgetId: string, volume = 0.04) {
+  activeWhiteNoiseWidgets.add(widgetId);
+
+  if (noiseNode) return;
 
   try {
     const ctx = getAudioContext();
@@ -37,6 +40,7 @@ export function startWhiteNoise(volume = 0.04) {
       b4 = 0,
       b5 = 0,
       b6 = 0;
+
     for (let i = 0; i < bufferSize; i++) {
       const white = Math.random() * 2 - 1;
       b0 = 0.99886 * b0 + white * 0.0555179;
@@ -62,14 +66,15 @@ export function startWhiteNoise(volume = 0.04) {
 
     noiseSource.start();
     noiseNode = noiseSource;
-    isNoisePlaying = true;
   } catch {
     toast.error("화이트 노이즈 오디오 생성에 실패했습니다.");
   }
 }
 
-export function stopWhiteNoise() {
-  if (!isNoisePlaying) return;
+export function stopWhiteNoise(widgetId: string) {
+  activeWhiteNoiseWidgets.delete(widgetId);
+
+  if (activeWhiteNoiseWidgets.size > 0) return;
 
   if (gainNode && audioCtx && noiseNode) {
     const currentGain = gainNode;
@@ -79,6 +84,7 @@ export function stopWhiteNoise() {
       0.0001,
       audioCtx.currentTime + 0.2,
     );
+
     setTimeout(() => {
       try {
         currentSource.stop();
@@ -89,7 +95,6 @@ export function stopWhiteNoise() {
 
   noiseNode = null;
   gainNode = null;
-  isNoisePlaying = false;
 }
 
 export function playCompletionSound() {

@@ -4,31 +4,30 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockGetUser = vi.fn();
 const mockUpdateUser = vi.fn();
-const mockStorageList = vi.fn();
 const mockStorageUpload = vi.fn();
 const mockStorageRemove = vi.fn();
 const mockToastSuccess = vi.fn();
 const mockToastError = vi.fn();
-const mockResizeImageToWebP = vi.fn();
+
+const mockSupabaseClient = {
+  auth: {
+    getUser: mockGetUser,
+    updateUser: mockUpdateUser,
+  },
+  storage: {
+    from: () => ({
+      upload: mockStorageUpload,
+      remove: mockStorageRemove,
+    }),
+  },
+};
 
 vi.mock("@/shared/lib/client", () => ({
-  createClient: () => ({
-    auth: {
-      getUser: mockGetUser,
-      updateUser: mockUpdateUser,
-    },
-    storage: {
-      from: () => ({
-        list: mockStorageList,
-        upload: mockStorageUpload,
-        remove: mockStorageRemove,
-      }),
-    },
-  }),
+  createClient: () => mockSupabaseClient,
 }));
 
-vi.mock("@/shared/lib/imageResizer", () => ({
-  resizeImageToWebP: (...args: unknown[]) => mockResizeImageToWebP(...args),
+vi.mock("@/shared/lib/supabase/client", () => ({
+  createClient: () => mockSupabaseClient,
 }));
 
 vi.mock("sonner", () => ({
@@ -41,13 +40,44 @@ vi.mock("sonner", () => ({
 describe("useProfileAvatar Hook", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetUser.mockResolvedValue({
-      data: { user: { id: "test-user-id" } },
-    });
-    mockStorageList.mockResolvedValue({ data: [] });
-    mockResizeImageToWebP.mockResolvedValue(
-      new Blob(["fake-webp"], { type: "image/webp" }),
+
+    global.URL.createObjectURL = vi.fn(() => "blob:http://localhost/mock-blob");
+    global.URL.revokeObjectURL = vi.fn();
+
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
+      () =>
+        ({
+          drawImage: vi.fn(),
+        }) as unknown as CanvasRenderingContext2D,
     );
+
+    vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation(
+      (callback) => {
+        callback(new Blob(["fake-webp"], { type: "image/webp" }));
+      },
+    );
+
+    global.Image = class {
+      onload: () => void = () => {};
+      onerror: (err: unknown) => void = () => {};
+      src = "";
+      width = 1000;
+      height = 1000;
+      constructor() {
+        setTimeout(() => {
+          if (this.onload) this.onload();
+        }, 0);
+      }
+    } as unknown as typeof Image;
+
+    mockGetUser.mockResolvedValue({
+      data: {
+        user: {
+          id: "test-user-id",
+          user_metadata: { avatar_path: "test-user-id/old-avatar.webp" },
+        },
+      },
+    });
   });
 
   it("초기 상태값이 올바르게 설정되어야 한다", () => {
@@ -58,14 +88,12 @@ describe("useProfileAvatar Hook", () => {
     expect(typeof result.current.deleteAvatar).toBe("function");
   });
 
-  it("이미지 파일 업로드 성공 시 새 파일 경로를 반환하고 user_metadata를 업데이트해야 한다", async () => {
-    mockStorageList.mockResolvedValueOnce({ data: [{ name: "old.webp" }] });
+  it("아바타 업로드 성공 시: 신규 업로드 ➔ 메타데이터 갱신 ➔ 기존 파일 삭제 순서로 실행된다", async () => {
     mockStorageUpload.mockResolvedValueOnce({ error: null });
-    mockStorageRemove.mockResolvedValueOnce({ error: null });
     mockUpdateUser.mockResolvedValueOnce({ error: null });
+    mockStorageRemove.mockResolvedValueOnce({ error: null });
 
     const { result } = renderHook(() => useProfileAvatar());
-
     const fakeFile = new File(["dummy"], "avatar.png", { type: "image/png" });
 
     let filePath: string | null = null;
@@ -74,41 +102,26 @@ describe("useProfileAvatar Hook", () => {
     });
 
     expect(filePath).toMatch(/^test-user-id\/\d+\.webp$/);
-    expect(mockStorageUpload).toHaveBeenCalled();
-    expect(mockStorageRemove).toHaveBeenCalledWith(["test-user-id/old.webp"]);
+    expect(mockStorageUpload).toHaveBeenCalledWith(
+      filePath,
+      expect.any(Blob),
+      expect.objectContaining({ contentType: "image/webp", upsert: true }),
+    );
     expect(mockUpdateUser).toHaveBeenCalledWith({
       data: { avatar_path: filePath },
     });
+    expect(mockStorageRemove).toHaveBeenCalledWith([
+      "test-user-id/old-avatar.webp",
+    ]);
     expect(mockToastSuccess).toHaveBeenCalledWith(
       "프로필 이미지가 변경되었습니다.",
     );
   });
 
-  it("아바타 삭제 시 스토리지 파일 제거 및 avatar_path null 처리가 수행되어야 한다", async () => {
-    mockStorageList.mockResolvedValueOnce({ data: [{ name: "current.webp" }] });
-    mockStorageRemove.mockResolvedValueOnce({ error: null });
-    mockUpdateUser.mockResolvedValueOnce({ error: null });
-
-    const { result } = renderHook(() => useProfileAvatar());
-
-    await act(async () => {
-      await result.current.deleteAvatar();
-    });
-
-    expect(mockStorageRemove).toHaveBeenCalledWith([
-      "test-user-id/current.webp",
-    ]);
-    expect(mockUpdateUser).toHaveBeenCalledWith({
-      data: { avatar_path: null },
-    });
-    expect(mockToastSuccess).toHaveBeenCalledWith(
-      "프로필 이미지가 기본 상태로 초기화되었습니다.",
-    );
-  });
-
-  it("업로드 도중 오류가 발생하면 실패 토스트를 출력하고 null을 반환한다", async () => {
-    mockStorageUpload.mockResolvedValueOnce({
-      error: { message: "Upload failed" },
+  it("메타데이터 갱신 실패 시 방금 업로드한 신규 파일을 즉시 파기(롤백)한다", async () => {
+    mockStorageUpload.mockResolvedValueOnce({ error: null });
+    mockUpdateUser.mockResolvedValueOnce({
+      error: { message: "Metadata update failed" },
     });
 
     const { result } = renderHook(() => useProfileAvatar());
@@ -120,6 +133,32 @@ describe("useProfileAvatar Hook", () => {
     });
 
     expect(filePath).toBeNull();
-    expect(mockToastError).toHaveBeenCalledWith("Upload failed");
+    expect(mockStorageRemove).toHaveBeenCalledWith([
+      expect.stringMatching(/^test-user-id\/\d+\.webp$/),
+    ]);
+    expect(mockToastError).toHaveBeenCalledWith("아바타 업로드 실패", {
+      description: "Metadata update failed",
+    });
+  });
+
+  it("아바타 삭제 시 메타데이터 null 처리 후 스토리지 기존 파일이 삭제된다", async () => {
+    mockUpdateUser.mockResolvedValueOnce({ error: null });
+    mockStorageRemove.mockResolvedValueOnce({ error: null });
+
+    const { result } = renderHook(() => useProfileAvatar());
+
+    await act(async () => {
+      await result.current.deleteAvatar();
+    });
+
+    expect(mockUpdateUser).toHaveBeenCalledWith({
+      data: { avatar_path: null },
+    });
+    expect(mockStorageRemove).toHaveBeenCalledWith([
+      "test-user-id/old-avatar.webp",
+    ]);
+    expect(mockToastSuccess).toHaveBeenCalledWith(
+      "프로필 이미지가 삭제되었습니다.",
+    );
   });
 });

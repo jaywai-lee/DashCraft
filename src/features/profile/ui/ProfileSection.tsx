@@ -4,7 +4,6 @@ import React, { useRef } from "react";
 import { useProfileAvatar } from "../model/useProfileAvatar";
 import { Button } from "@/shared/ui/button";
 import { User, Upload, Trash2, Loader2, ShieldCheck } from "lucide-react";
-import Image from "next/image";
 
 interface ProfileSectionProps {
   userEmail: string;
@@ -51,7 +50,8 @@ export const ProfileSection = ({
       <div className="flex items-center gap-4 sm:gap-5">
         <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-full overflow-hidden bg-muted border border-border flex items-center justify-center shrink-0 shadow-xs">
           {avatarUrl ? (
-            <Image
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
               src={avatarUrl}
               alt="프로필 이미지"
               className="w-full h-full object-cover"
