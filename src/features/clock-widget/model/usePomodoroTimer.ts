@@ -1,61 +1,29 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect } from "react";
 import { DEFAULT_RUNTIME_STATE, useClockStore } from "./useClockStore";
-import {
-  useWidgetsQuery,
-  useUpdateWidgetMutation,
-} from "@/widgets/dashboard-grid/api/useDashboardQuery";
-import { DEFAULT_CLOCK_CONFIG } from "@/widgets/dashboard-grid/config/widgets.config";
-import {
-  playCompletionSound,
-  requestNotificationPermission,
-  startWhiteNoise,
-  stopWhiteNoise,
-  triggerNotification,
-} from "../lib/audioNotifier";
-import { toast } from "sonner";
+import { useClockConfig } from "./useClockConfig";
+import { useTimerEffects } from "./useTimerEffects";
 
 export const usePomodoroTimer = (widgetId: string) => {
-  const { data: widgets = [] } = useWidgetsQuery();
-  const updateWidgetMutation = useUpdateWidgetMutation();
-
-  const currentWidget = widgets.find((w) => w.widget_id === widgetId);
-
-  const rawConfig = useMemo(
-    () => (currentWidget?.config as Record<string, unknown>) ?? {},
-    [currentWidget?.config],
-  );
-
-  const workDuration =
-    typeof rawConfig.workDuration === "number"
-      ? rawConfig.workDuration
-      : DEFAULT_CLOCK_CONFIG.workDuration;
-  const breakDuration =
-    typeof rawConfig.breakDuration === "number"
-      ? rawConfig.breakDuration
-      : DEFAULT_CLOCK_CONFIG.breakDuration;
-  const isSoundEnabled =
-    typeof rawConfig.isSoundEnabled === "boolean"
-      ? rawConfig.isSoundEnabled
-      : DEFAULT_CLOCK_CONFIG.isSoundEnabled;
-  const isNotificationEnabled =
-    typeof rawConfig.isNotificationEnabled === "boolean"
-      ? rawConfig.isNotificationEnabled
-      : DEFAULT_CLOCK_CONFIG.isNotificationEnabled;
+  const {
+    workDuration,
+    breakDuration,
+    isSoundEnabled,
+    isNotificationEnabled,
+    toggleSound,
+    handleNotificationToggle,
+  } = useClockConfig(widgetId);
 
   const timerState = useClockStore(
     (s) => s.states[widgetId] ?? DEFAULT_RUNTIME_STATE,
   );
-
   const { timerPhase, timeLeft, isRunning, targetEndTime } = timerState;
 
   const toggleTimerStore = useClockStore((s) => s.toggleTimer);
   const resetTimerStore = useClockStore((s) => s.resetTimer);
   const syncTimeLeft = useClockStore((s) => s.syncTimeLeft);
   const switchPhaseStore = useClockStore((s) => s.switchPhase);
-
-  const prevTimeLeftRef = useRef(timeLeft);
 
   const currentDuration = timerPhase === "work" ? workDuration : breakDuration;
 
@@ -90,93 +58,17 @@ export const usePomodoroTimer = (widgetId: string) => {
     };
   }, [isRunning, targetEndTime, widgetId, syncTimeLeft]);
 
-  useEffect(() => {
-    if (prevTimeLeftRef.current > 0 && timeLeft === 0) {
-      stopWhiteNoise(widgetId);
-
-      if (isSoundEnabled) {
-        playCompletionSound();
-      }
-
-      const title =
-        timerPhase === "work" ? "🎉 집중 시간 종료!" : "🔔 휴식 시간 종료!";
-      const body =
-        timerPhase === "work"
-          ? "고생하셨습니다! 5분간 달콤한 휴식을 취하세요."
-          : "휴식이 완료되었습니다! 다시 집중해볼까요?";
-      toast.info(title, { description: body });
-
-      if (isNotificationEnabled) {
-        triggerNotification(title, body);
-      }
-
-      const nextPhase = timerPhase === "work" ? "break" : "work";
-      const nextDuration = nextPhase === "work" ? workDuration : breakDuration;
-
-      setTimeout(() => {
-        switchPhaseStore(widgetId, nextPhase, nextDuration);
-      }, 1000);
-    }
-    prevTimeLeftRef.current = timeLeft;
-  }, [
+  useTimerEffects({
+    widgetId,
     timeLeft,
-    isSoundEnabled,
-    isNotificationEnabled,
+    isRunning,
     timerPhase,
     workDuration,
     breakDuration,
-    widgetId,
-    switchPhaseStore,
-  ]);
-
-  useEffect(() => {
-    if (isRunning && timerPhase === "work" && isSoundEnabled) {
-      startWhiteNoise(widgetId);
-    } else {
-      stopWhiteNoise(widgetId);
-    }
-
-    return () => {
-      stopWhiteNoise(widgetId);
-    };
-  }, [isRunning, timerPhase, isSoundEnabled, widgetId]);
-
-  const handleNotificationToggle = useCallback(async () => {
-    if (!isNotificationEnabled) {
-      const granted = await requestNotificationPermission();
-      if (granted) {
-        updateWidgetMutation.mutate({
-          widgetId,
-          config: {
-            ...rawConfig,
-            isNotificationEnabled: true,
-          },
-        });
-        toast.success("브라우저 알림이 활성화되었습니다.");
-      } else {
-        toast.warning("브라우저 설정에서 알림 권한을 허용해 주세요.");
-      }
-    } else {
-      updateWidgetMutation.mutate({
-        widgetId,
-        config: {
-          ...rawConfig,
-          isNotificationEnabled: false,
-        },
-      });
-      toast.info("브라우저 알림이 비활성화되었습니다.");
-    }
-  }, [isNotificationEnabled, updateWidgetMutation, widgetId, rawConfig]);
-
-  const toggleSound = useCallback(() => {
-    updateWidgetMutation.mutate({
-      widgetId,
-      config: {
-        ...rawConfig,
-        isSoundEnabled: !isSoundEnabled,
-      },
-    });
-  }, [isSoundEnabled, updateWidgetMutation, widgetId, rawConfig]);
+    isSoundEnabled,
+    isNotificationEnabled,
+    onSwitchPhase: switchPhaseStore,
+  });
 
   const toggleTimer = useCallback(
     () => toggleTimerStore(widgetId, currentDuration),

@@ -1,16 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ddayRepository, DDayRow } from "./ddayRepository";
 import { queryKeys } from "@/shared/config/queryKeys";
-import { toast } from "sonner";
+import { createOptimisticMutation } from "@/shared/lib/react-query/optimisticHelper";
 
 interface AddDDayParams {
   title: string;
   targetDate: string;
-  ddayId: string;
-}
-
-interface MutationContext {
-  previousDDays?: DDayRow[];
+  ddayId?: string;
 }
 
 export const useDDaysQuery = (widgetId: string) => {
@@ -23,108 +19,49 @@ export const useDDaysQuery = (widgetId: string) => {
 
 export const useAddDDayMutation = (widgetId: string) => {
   const queryClient = useQueryClient();
+  const queryKey = queryKeys.ddays.byWidget(widgetId);
 
-  return useMutation<DDayRow, Error, AddDDayParams, MutationContext>({
-    mutationKey: queryKeys.ddays.byWidget(widgetId),
-    mutationFn: ({ title, targetDate, ddayId }) =>
-      ddayRepository.insertDDay({
-        widget_id: widgetId,
-        dday_id: ddayId,
-        title,
-        target_date: targetDate,
-      }),
-    onMutate: async ({ title, targetDate, ddayId }) => {
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.ddays.byWidget(widgetId),
-      });
-
-      const previousDDays = queryClient.getQueryData<DDayRow[]>(
-        queryKeys.ddays.byWidget(widgetId),
-      );
-
-      const optimisticDDay: DDayRow = {
-        id: crypto.randomUUID(),
-        user_id: "",
-        widget_id: widgetId,
-        dday_id: ddayId,
-        title,
-        target_date: targetDate,
-        created_at: new Date().toISOString(),
-      };
-
-      queryClient.setQueryData<DDayRow[]>(
-        queryKeys.ddays.byWidget(widgetId),
-        (old = []) => [...old, optimisticDDay],
-      );
-
-      return { previousDDays };
-    },
-    onError: (err, _variables, context) => {
-      if (context?.previousDDays) {
-        queryClient.setQueryData<DDayRow[]>(
-          queryKeys.ddays.byWidget(widgetId),
-          context.previousDDays,
-        );
-      }
-      toast.error("D-Day 추가 실패", { description: err.message });
-    },
-    onSettled: () => {
-      if (
-        queryClient.isMutating({
-          mutationKey: queryKeys.ddays.byWidget(widgetId),
-        }) === 1
-      ) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.ddays.byWidget(widgetId),
-        });
-      }
-    },
-  });
+  return useMutation(
+    createOptimisticMutation<DDayRow, AddDDayParams, DDayRow[]>({
+      queryClient,
+      queryKey,
+      mutationFn: ({ title, targetDate, ddayId }) =>
+        ddayRepository.insertDDay({
+          widget_id: widgetId,
+          dday_id: ddayId ?? crypto.randomUUID(),
+          title,
+          target_date: targetDate,
+        }),
+      updateCache: (oldDDays = [], { title, targetDate, ddayId }) => {
+        const optimisticDDay: DDayRow = {
+          id: crypto.randomUUID(),
+          user_id: "",
+          widget_id: widgetId,
+          dday_id: ddayId ?? crypto.randomUUID(),
+          title,
+          target_date: targetDate,
+          created_at: new Date().toISOString(),
+        };
+        return [...oldDDays, optimisticDDay];
+      },
+      errorMessage: "D-Day 추가 실패",
+    }),
+  );
 };
 
 export const useDeleteDDayMutation = (widgetId: string) => {
   const queryClient = useQueryClient();
+  const queryKey = queryKeys.ddays.byWidget(widgetId);
 
-  return useMutation<void, Error, string, MutationContext>({
-    mutationKey: queryKeys.ddays.byWidget(widgetId),
-    mutationFn: (ddayId: string) => ddayRepository.deleteDDay(widgetId, ddayId),
-    onMutate: async (ddayId) => {
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.ddays.byWidget(widgetId),
-      });
-
-      const previousDDays = queryClient.getQueryData<DDayRow[]>(
-        queryKeys.ddays.byWidget(widgetId),
-      );
-
-      if (previousDDays) {
-        queryClient.setQueryData<DDayRow[]>(
-          queryKeys.ddays.byWidget(widgetId),
-          previousDDays.filter((d) => d.dday_id !== ddayId),
-        );
-      }
-
-      return { previousDDays };
-    },
-    onError: (err, _ddayId, context) => {
-      if (context?.previousDDays) {
-        queryClient.setQueryData<DDayRow[]>(
-          queryKeys.ddays.byWidget(widgetId),
-          context.previousDDays,
-        );
-      }
-      toast.error("D-Day 삭제 실패", { description: err.message });
-    },
-    onSettled: () => {
-      if (
-        queryClient.isMutating({
-          mutationKey: queryKeys.ddays.byWidget(widgetId),
-        }) === 1
-      ) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.ddays.byWidget(widgetId),
-        });
-      }
-    },
-  });
+  return useMutation(
+    createOptimisticMutation<void, string, DDayRow[]>({
+      queryClient,
+      queryKey,
+      mutationFn: (ddayId: string) =>
+        ddayRepository.deleteDDay(widgetId, ddayId),
+      updateCache: (oldDDays = [], ddayId) =>
+        oldDDays.filter((d) => d.dday_id !== ddayId),
+      errorMessage: "D-Day 삭제 실패",
+    }),
+  );
 };
