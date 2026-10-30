@@ -1,175 +1,192 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
-import { AppHeader } from "@/widgets/header/ui/AppHeader";
-import { CalendarHeader } from "./CalendarHeader";
-import { CalendarGrid } from "./CalendarGrid";
-import { formatDateToYYYYMMDD } from "../lib/dateUtils";
-import { ScheduleItem } from "../model/types";
+import React, { useMemo } from "react";
 import {
-  useSchedulesQuery,
-  useAddScheduleMutation,
-  useUpdateScheduleMutation,
-  useDeleteScheduleMutation,
-} from "../api/useScheduleQuery";
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameMonth,
+  isToday as isTodayFn,
+} from "date-fns";
+import { ko } from "date-fns/locale";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon,
+  Loader2,
+} from "lucide-react";
+import { Button } from "@/shared/ui/button";
+import { cn } from "@/shared/lib/utils";
+import { CalendarCell } from "./CalendarCell";
+import { ScheduleModal } from "./ScheduleModal";
+import { useCalendarNavigation } from "../model/useCalendarNavigation";
+import { useScheduleModal } from "../model/useScheduleModal";
+import { useCalendarSchedules } from "../model/useCalendarSchedules";
 
-const ScheduleModal = dynamic(
-  () => import("./ScheduleModal").then((mod) => mod.ScheduleModal),
-  { ssr: false },
-);
+const WEEK_DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 export const CalendarView = () => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
-  const [editingSchedule, setEditingSchedule] = useState<ScheduleItem | null>(
-    null,
-  );
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const {
+    currentDate,
+    handlePrevMonth,
+    handleNextMonth,
+    handleToday,
+    startDateStr,
+    endDateStr,
+  } = useCalendarNavigation();
 
-  const { startDate, endDate } = useMemo(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+  const {
+    isOpen,
+    selectedDateStr,
+    scheduleToEdit,
+    openAddModal,
+    openEditModal,
+    closeModal,
+  } = useScheduleModal();
 
-    const start = formatDateToYYYYMMDD(new Date(year, month - 1, 1));
-    const end = formatDateToYYYYMMDD(new Date(year, month + 2, 0));
+  const {
+    schedules,
+    schedulesMap,
+    isLoading,
+    addSchedule,
+    updateSchedule,
+    deleteSchedule,
+    isSaving,
+  } = useCalendarSchedules(startDateStr, endDateStr);
 
-    return { startDate: start, endDate: end };
+  const calendarDays = useMemo(() => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(monthStart);
+    const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+    const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+
+    return eachDayOfInterval({ start: gridStart, end: gridEnd });
   }, [currentDate]);
 
-  const { data: rawSchedules = [] } = useSchedulesQuery(startDate, endDate);
-  const addScheduleMutation = useAddScheduleMutation(startDate, endDate);
-  const updateScheduleMutation = useUpdateScheduleMutation(startDate, endDate);
-  const deleteScheduleMutation = useDeleteScheduleMutation(startDate, endDate);
-
-  const schedulesMap = useMemo(() => {
-    const map: Record<string, ScheduleItem[]> = {};
-    for (const item of rawSchedules) {
-      if (!map[item.date_str]) {
-        map[item.date_str] = [];
-      }
-      map[item.date_str].push({
-        id: item.schedule_id,
-        title: item.title,
-        time: item.time_str ?? undefined,
+  const handleSaveModal = async (params: {
+    scheduleId?: string;
+    dateStr: string;
+    title: string;
+    time?: string;
+  }) => {
+    if (params.scheduleId) {
+      await updateSchedule({
+        scheduleId: params.scheduleId,
+        dateStr: params.dateStr,
+        title: params.title,
+        time: params.time,
+      });
+    } else {
+      await addSchedule({
+        dateStr: params.dateStr,
+        title: params.title,
+        time: params.time,
       });
     }
-    return map;
-  }, [rawSchedules]);
-
-  const handlePrevYear = useCallback(
-    () =>
-      setCurrentDate(
-        (prev) => new Date(prev.getFullYear() - 1, prev.getMonth(), 1),
-      ),
-    [],
-  );
-  const handleNextYear = useCallback(
-    () =>
-      setCurrentDate(
-        (prev) => new Date(prev.getFullYear() + 1, prev.getMonth(), 1),
-      ),
-    [],
-  );
-  const handlePrevMonth = useCallback(
-    () =>
-      setCurrentDate(
-        (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
-      ),
-    [],
-  );
-  const handleNextMonth = useCallback(
-    () =>
-      setCurrentDate(
-        (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
-      ),
-    [],
-  );
-  const handleToday = useCallback(() => setCurrentDate(new Date()), []);
-
-  const handleOpenAddModal = useCallback((dateStr: string) => {
-    setSelectedDateStr(dateStr);
-    setEditingSchedule(null);
-    setIsModalOpen(true);
-  }, []);
-
-  const handleOpenEditModal = useCallback(
-    (dateStr: string, schedule: ScheduleItem) => {
-      setSelectedDateStr(dateStr);
-      setEditingSchedule(schedule);
-      setIsModalOpen(true);
-    },
-    [],
-  );
-
-  const handleCloseModal = useCallback(() => {
-    setIsModalOpen(false);
-    setEditingSchedule(null);
-  }, []);
-
-  const handleSelectDate = useCallback((dateStr: string) => {
-    setSelectedDateStr(dateStr);
-  }, []);
-
-  const handleAddSchedule = useCallback(
-    (dateStr: string, title: string, time?: string) => {
-      addScheduleMutation.mutate({
-        dateStr,
-        title,
-        time,
-        scheduleId: crypto.randomUUID(),
-      });
-    },
-    [addScheduleMutation],
-  );
-
-  const handleUpdateSchedule = useCallback(
-    (dateStr: string, id: string, title: string, time?: string) => {
-      updateScheduleMutation.mutate({ scheduleId: id, dateStr, title, time });
-    },
-    [updateScheduleMutation],
-  );
-
-  const handleRemoveSchedule = useCallback(
-    (_dateStr: string, id: string) => {
-      deleteScheduleMutation.mutate({ scheduleId: id });
-    },
-    [deleteScheduleMutation],
-  );
+  };
 
   return (
-    <div className="min-h-screen bg-muted/20 text-foreground flex flex-col">
-      <AppHeader />
+    <div className="bg-card border border-border rounded-2xl shadow-xs overflow-hidden flex flex-col h-full">
+      <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 text-primary rounded-xl">
+            <CalendarIcon className="w-5 h-5" />
+          </div>
+          <h2 className="text-lg font-bold text-foreground tracking-tight">
+            {format(currentDate, "yyyy년 MM월", { locale: ko })}
+          </h2>
+        </div>
 
-      <CalendarHeader
-        currentDate={currentDate}
-        onPrevYear={handlePrevYear}
-        onPrevMonth={handlePrevMonth}
-        onNextYear={handleNextYear}
-        onNextMonth={handleNextMonth}
-        onToday={handleToday}
+        <div className="flex items-center gap-1.5">
+          <Button variant="outline" size="sm" onClick={handleToday}>
+            오늘
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handlePrevMonth}
+            className="h-8 w-8 p-0"
+            aria-label="이전 달"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleNextMonth}
+            className="h-8 w-8 p-0"
+            aria-label="다음 달"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 border-b border-border text-center text-xs font-semibold py-2 bg-muted/30">
+        {WEEK_DAYS.map((day, idx) => (
+          <div
+            key={day}
+            className={cn(
+              "py-1",
+              idx === 0 && "text-rose-500",
+              idx === 6 && "text-blue-500",
+            )}
+          >
+            {day}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex-1 min-h-[500px] relative flex flex-col">
+        {isLoading && (
+          <div className="absolute inset-0 bg-background/50 backdrop-blur-2xs flex items-center justify-center z-10">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        )}
+
+        <div className="grid grid-cols-7 auto-rows-fr flex-1 border-l border-t border-border/60">
+          {calendarDays.map((day) => {
+            const dateStr = format(day, "yyyy-MM-dd");
+            const daySchedules = schedulesMap.get(dateStr) ?? [];
+
+            return (
+              <CalendarCell
+                key={dateStr}
+                date={day}
+                dateStr={dateStr}
+                isCurrentMonth={isSameMonth(day, currentDate)}
+                isToday={isTodayFn(day)}
+                isSelected={selectedDateStr === dateStr}
+                daySchedules={daySchedules}
+                onSelectDate={openAddModal}
+                onOpenModal={openAddModal}
+                onEditSchedule={(_dStr, schedule) => {
+                  const target = schedules.find(
+                    (s) => s.schedule_id === schedule.id,
+                  );
+                  if (target) openEditModal(target);
+                }}
+                onRemoveSchedule={(_dStr, id) => {
+                  deleteSchedule(id);
+                }}
+              />
+            );
+          })}
+        </div>
+      </div>
+
+      <ScheduleModal
+        isOpen={isOpen}
+        selectedDateStr={selectedDateStr}
+        scheduleToEdit={scheduleToEdit}
+        isSaving={isSaving}
+        onClose={closeModal}
+        onSave={handleSaveModal}
+        onDelete={deleteSchedule}
       />
-
-      <main className="flex-1 max-w-[1800px] w-full mx-auto p-4 sm:p-6 space-y-4">
-        <CalendarGrid
-          currentDate={currentDate}
-          schedules={schedulesMap}
-          selectedDateStr={selectedDateStr}
-          onSelectDate={handleSelectDate}
-          onOpenModal={handleOpenAddModal}
-          onEditSchedule={handleOpenEditModal}
-          onRemoveSchedule={handleRemoveSchedule}
-        />
-
-        <ScheduleModal
-          isOpen={isModalOpen}
-          dateStr={selectedDateStr}
-          editingSchedule={editingSchedule}
-          onClose={handleCloseModal}
-          onAddSchedule={handleAddSchedule}
-          onUpdateSchedule={handleUpdateSchedule}
-        />
-      </main>
     </div>
   );
 };
