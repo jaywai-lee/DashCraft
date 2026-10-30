@@ -1,11 +1,12 @@
+import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import { NextResponse, type NextRequest } from "next/server";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const cookieStore = await cookies();
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -30,37 +31,22 @@ export async function POST(request: NextRequest) {
       error: userError,
     } = await supabase.auth.getUser();
 
-    if (userError || !user || !user.email) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: "인증되지 않은 요청입니다." },
         { status: 401 },
       );
     }
 
-    const body = await request.json().catch(() => ({}));
-    const { confirmEmail } = body;
-
-    const normalizedInputEmail =
-      typeof confirmEmail === "string" ? confirmEmail.trim().toLowerCase() : "";
-    const normalizedUserEmail = user.email.trim().toLowerCase();
-
-    if (!normalizedInputEmail || normalizedInputEmail !== normalizedUserEmail) {
-      return NextResponse.json(
-        { error: "확인 이메일 주소가 일치하지 않습니다." },
-        { status: 400 },
-      );
-    }
-
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceRoleKey) {
-      console.error("[Account Delete API Error] SERVICE_ROLE_KEY missing.");
       return NextResponse.json(
-        { error: "서버 오류가 발생했습니다." },
+        { error: "서버 암호화키 설정이 올바르지 않습니다." },
         { status: 500 },
       );
     }
 
-    const supabaseAdmin = createClient(
+    const supabaseAdmin = createAdminClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       serviceRoleKey,
       {
@@ -71,48 +57,18 @@ export async function POST(request: NextRequest) {
       },
     );
 
-    const { data: avatarFiles } = await supabaseAdmin.storage
-      .from("avatars")
-      .list(user.id);
-
-    if (avatarFiles && avatarFiles.length > 0) {
-      const filePaths = avatarFiles.map((f) => `${user.id}/${f.name}`);
-      const { error: storageRemoveError } = await supabaseAdmin.storage
-        .from("avatars")
-        .remove(filePaths);
-
-      if (storageRemoveError) {
-        console.error(
-          "[Account Delete API Error] Storage cleanup failed:",
-          storageRemoveError.message,
-        );
-      }
-    }
-
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(
       user.id,
     );
 
     if (deleteError) {
-      console.error(
-        "[Account Delete API Error] Delete user failed:",
-        deleteError.message,
-      );
-      return NextResponse.json(
-        { error: "계정 삭제에 실패했습니다." },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: deleteError.message }, { status: 500 });
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "계정이 성공적으로 삭제되었습니다.",
-    });
+    return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    console.error("[Account Delete API Error] Unexpected exception:", err);
-    return NextResponse.json(
-      { error: "서버 오류가 발생했습니다." },
-      { status: 500 },
-    );
+    const message =
+      err instanceof Error ? err.message : "서버 오류가 발생했습니다.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
