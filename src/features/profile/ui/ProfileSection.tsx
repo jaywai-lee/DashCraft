@@ -6,7 +6,7 @@ import { Button } from "@/shared/ui/button";
 import { User, Upload, Trash2, Loader2, ShieldCheck } from "lucide-react";
 
 interface ProfileSectionProps {
-  userEmail: string;
+  userEmail?: string;
   avatarUrl?: string;
   onAvatarUpdated?: () => void;
 }
