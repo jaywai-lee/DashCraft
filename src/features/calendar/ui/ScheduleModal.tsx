@@ -1,183 +1,148 @@
 "use client";
 
-import { Button } from "@/shared/ui/button";
+import React, { useState, useEffect } from "react";
 import { Modal } from "@/shared/ui/modal";
-import React, { useEffect, useState } from "react";
-import { HOURS, MINUTES, useTimePicker } from "../model/useTimePicker";
-import { ScheduleItem } from "../model/types";
+import { Button } from "@/shared/ui/button";
+import { TimePickerInput } from "./TimePickerInput";
+import { ColorPalettePicker, ScheduleColorId } from "./ColorPalettePicker";
+import { ScheduleRow } from "../api/scheduleRepository";
+import { Trash2 } from "lucide-react";
 
 interface ScheduleModalProps {
   isOpen: boolean;
-  dateStr: string | null;
-  editingSchedule?: ScheduleItem | null;
+  selectedDateStr: string;
+  scheduleToEdit: ScheduleRow | null;
+  isSaving: boolean;
   onClose: () => void;
-  onAddSchedule: (dateStr: string, title: string, time?: string) => void;
-  onUpdateSchedule?: (
-    dateStr: string,
-    id: string,
-    title: string,
-    time?: string,
-  ) => void;
+  onSave: (params: {
+    scheduleId?: string;
+    dateStr: string;
+    title: string;
+    time?: string;
+    color?: string;
+  }) => Promise<void>;
+  onDelete?: (scheduleId: string) => Promise<void>;
 }
 
 export const ScheduleModal = ({
   isOpen,
-  dateStr,
-  editingSchedule,
+  selectedDateStr,
+  scheduleToEdit,
+  isSaving,
   onClose,
-  onAddSchedule,
-  onUpdateSchedule,
+  onSave,
+  onDelete,
 }: ScheduleModalProps) => {
   const [title, setTitle] = useState("");
-  const {
-    isAllDay,
-    ampm,
-    hour,
-    minute,
-    setAmpm,
-    setHour,
-    setMinute,
-    toggleAllDay,
-    getTimeString,
-    setTimeFromString,
-    resetTimePicker,
-  } = useTimePicker();
-
-  const isEditMode = Boolean(editingSchedule);
+  const [time, setTime] = useState("");
+  const [color, setColor] = useState<ScheduleColorId>("default");
 
   useEffect(() => {
-    if (isOpen) {
-      if (editingSchedule) {
-        setTitle(editingSchedule.title);
-        setTimeFromString(editingSchedule.time);
-      } else {
-        setTitle("");
-        resetTimePicker();
-      }
-    }
-  }, [isOpen, editingSchedule, resetTimePicker, setTimeFromString]);
-
-  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!title.trim() || !dateStr) return;
-
-    const timeString = getTimeString();
-
-    if (isEditMode && editingSchedule && onUpdateSchedule) {
-      onUpdateSchedule(dateStr, editingSchedule.id, title, timeString);
+    if (scheduleToEdit) {
+      setTitle(scheduleToEdit.title);
+      setTime(scheduleToEdit.time_str || "");
+      setColor((scheduleToEdit.color as ScheduleColorId) || "default");
     } else {
-      onAddSchedule(dateStr, title, timeString);
+      setTitle("");
+      setTime("");
+      setColor("default");
     }
+  }, [scheduleToEdit, isOpen]);
 
-    setTitle("");
-    resetTimePicker();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+
+    await onSave({
+      scheduleId: scheduleToEdit?.schedule_id,
+      dateStr: selectedDateStr,
+      title: title.trim(),
+      time: time || undefined,
+      color,
+    });
     onClose();
   };
+
+  const handleDelete = async () => {
+    if (scheduleToEdit && onDelete) {
+      await onDelete(scheduleToEdit.schedule_id);
+      onClose();
+    }
+  };
+
+  const isEditMode = Boolean(scheduleToEdit);
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={
-        isEditMode
-          ? `일정 수정 (${dateStr ?? ""})`
-          : `일정 추가 (${dateStr ?? ""})`
-      }
-      maxWidth="sm"
+      title={isEditMode ? "일정 수정" : "새 일정 추가"}
+      description={`${selectedDateStr} 날짜의 일정을 관리합니다.`}
       footer={
-        <div className="flex items-center justify-end gap-2 w-full">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="cursor-pointer"
-          >
-            취소
-          </Button>
-          <Button
-            type="submit"
-            form="schedule-add-form"
-            variant="primary"
-            size="sm"
-            className="cursor-pointer"
-          >
-            {isEditMode ? "수정" : "저장"}
-          </Button>
+        <div className="flex items-center justify-between w-full">
+          {isEditMode && onDelete ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDelete}
+              disabled={isSaving}
+              className="text-destructive hover:bg-destructive/10 border-destructive/30"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>삭제</span>
+            </Button>
+          ) : (
+            <div />
+          )}
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+              disabled={isSaving}
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={handleSubmit}
+              isLoading={isSaving}
+              disabled={!title.trim() || isSaving}
+            >
+              {isEditMode ? "저장" : "추가"}
+            </Button>
+          </div>
         </div>
       }
     >
-      <form
-        id="schedule-add-form"
-        onSubmit={handleSubmit}
-        className="space-y-3.5 text-left"
-      >
-        <div>
-          <label className="text-xs font-semibold text-muted-foreground block mb-1">
-            일정 제목
+      <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground">
+            일정 제목 <span className="text-destructive">*</span>
           </label>
           <input
             type="text"
             required
-            placeholder="일정을 입력하세요"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 text-sm bg-background border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder="예: 팀 주간 회의"
             autoFocus
+            className="w-full px-3 py-2 text-xs bg-background border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
 
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-semibold text-muted-foreground">
-              시간 지정
-            </label>
-            <button
-              type="button"
-              onClick={toggleAllDay}
-              className="text-xs text-primary hover:underline cursor-pointer font-medium"
-            >
-              {isAllDay ? "+ 시간 설정" : "하루 종일"}
-            </button>
-          </div>
+        <TimePickerInput value={time} onChange={setTime} disabled={isSaving} />
 
-          {!isAllDay && (
-            <div className="grid grid-cols-3 gap-1.5 p-2 bg-muted/40 border rounded-lg animate-in fade-in zoom-in-95 duration-150">
-              <select
-                value={ampm}
-                onChange={(e) => setAmpm(e.target.value as "오전" | "오후")}
-                className="px-2 py-1.5 text-xs bg-background border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-              >
-                <option value="오전">오전</option>
-                <option value="오후">오후</option>
-              </select>
-
-              <select
-                value={hour}
-                onChange={(e) => setHour(e.target.value)}
-                className="px-2 py-1.5 text-xs bg-background border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-              >
-                {HOURS.map((h) => (
-                  <option key={h} value={h}>
-                    {h}시
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={minute}
-                onChange={(e) => setMinute(e.target.value)}
-                className="px-2 py-1.5 text-xs bg-background border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-              >
-                {MINUTES.map((m) => (
-                  <option key={m} value={m}>
-                    {m}분
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
+        <ColorPalettePicker
+          selectedColor={color}
+          onChange={setColor}
+          disabled={isSaving}
+        />
       </form>
     </Modal>
   );
