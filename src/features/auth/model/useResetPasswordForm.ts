@@ -12,44 +12,32 @@ export const useResetPasswordForm = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
-    let isRecovery = false;
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!isMounted) return;
 
-      if (event === "PASSWORD_RECOVERY") {
-        isRecovery = true;
-        return;
-      }
-
-      if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
-        if (!isRecovery) {
-          toast.error("유효한 비밀번호 재설정 세션이 없습니다.", {
-            description: "비밀번호 재설정 링크를 다시 요청해 주세요.",
-          });
-
-          if (session?.user) {
-            router.replace("/settings");
-          } else {
-            router.replace("/forgot-password");
-          }
-        }
-      } else if (event === "SIGNED_OUT" && !isRecovery) {
+      if (!session) {
         toast.error("유효한 비밀번호 재설정 세션이 없습니다.", {
           description: "비밀번호 재설정 링크를 다시 요청해 주세요.",
         });
         router.replace("/forgot-password");
+      } else {
+        setIsCheckingSession(false);
       }
-    });
+    };
+
+    void checkSession();
 
     return () => {
       isMounted = false;
-      subscription.unsubscribe();
     };
   }, [supabase, router]);
 
@@ -72,14 +60,17 @@ export const useResetPasswordForm = () => {
       password,
     });
 
-    setIsLoading(false);
-
     if (error) {
+      setIsLoading(false);
       toast.error("비밀번호 변경 실패", { description: error.message });
       return;
     }
 
-    toast.success("비밀번호가 성공적으로 변경되었습니다.");
+    toast.success(
+      "비밀번호가 성공적으로 변경되었습니다. 다시 로그인해 주세요.",
+    );
+    await supabase.auth.signOut();
+    setIsLoading(false);
     router.push("/login");
     router.refresh();
   };
@@ -90,6 +81,7 @@ export const useResetPasswordForm = () => {
     confirmPassword,
     setConfirmPassword,
     isLoading,
+    isCheckingSession,
     handleResetPassword,
   };
 };

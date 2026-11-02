@@ -23,7 +23,8 @@ export const DeleteAccountSection = ({
     handleDeleteAccount,
   } = useDeleteAccount(userEmail);
 
-  const isConfirmed = inputEmail === userEmail;
+  const isConfirmed =
+    inputEmail.trim().toLowerCase() === (userEmail ?? "").trim().toLowerCase();
 
   return (
     <>
@@ -58,7 +59,7 @@ export const DeleteAccountSection = ({
             variant="outline"
             size="sm"
             onClick={openModal}
-            className="text-destructive hover:bg-destructive/10 border-destructive/30 text-xs h-9 gap-1.5"
+            className="text-destructive hover:bg-destructive/10 border-destructive/30 text-xs h-9 gap-1.5 cursor-pointer"
           >
             <Trash2 className="w-4 h-4" />
             <span>계정 삭제</span>
@@ -89,9 +90,9 @@ export const DeleteAccountSection = ({
               onClick={handleDeleteAccount}
               isLoading={isLoading}
               disabled={!isConfirmed || isLoading}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground cursor-pointer"
             >
-              영구 삭제 실행
+              삭제
             </Button>
           </div>
         }
