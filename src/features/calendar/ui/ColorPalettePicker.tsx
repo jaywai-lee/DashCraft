@@ -4,7 +4,7 @@ import React from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 
-export const SCHEDULE_COLORS = [
+const SCHEDULE_COLORS = [
   { id: "default", bg: "bg-primary", label: "기본" },
   { id: "blue", bg: "bg-blue-500", label: "파랑" },
   { id: "green", bg: "bg-emerald-500", label: "초록" },
