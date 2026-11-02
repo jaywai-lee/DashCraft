@@ -30,9 +30,12 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isAuthPage = pathname === "/login" || pathname === "/signup";
+  const isAuthPage =
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/forgot-password";
 
-  if (!user && !isAuthPage) {
+  if (!user && !isAuthPage && pathname !== "/reset-password") {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -54,6 +57,8 @@ export const config = {
     "/settings/:path*",
     "/login",
     "/signup",
+    "/forgot-password",
+    "/reset-password",
     "/api/account/delete",
   ],
 };
