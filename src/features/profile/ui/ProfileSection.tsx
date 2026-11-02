@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { useProfileAvatar } from "../model/useProfileAvatar";
 import { Button } from "@/shared/ui/button";
+import { createClient } from "@/shared/lib/client";
 import { User, Upload, Trash2, Loader2, ShieldCheck } from "lucide-react";
 
 interface ProfileSectionProps {
@@ -18,6 +19,24 @@ export const ProfileSection = ({
 }: ProfileSectionProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isUploading, uploadAvatar, deleteAvatar } = useProfileAvatar();
+  const [hasCustomAvatar, setHasCustomAvatar] = useState(false);
+
+  useEffect(() => {
+    const checkCustomAvatar = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user?.user_metadata?.avatar_path) {
+        setHasCustomAvatar(true);
+      } else {
+        setHasCustomAvatar(false);
+      }
+    };
+
+    void checkCustomAvatar();
+  }, [avatarUrl]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -34,8 +53,10 @@ export const ProfileSection = ({
   };
 
   const handleDelete = async () => {
-    await deleteAvatar();
-    onAvatarUpdated?.();
+    const success = await deleteAvatar();
+    if (success) {
+      onAvatarUpdated?.();
+    }
   };
 
   return (
@@ -87,19 +108,20 @@ export const ProfileSection = ({
               size="sm"
               disabled={isUploading}
               onClick={() => fileInputRef.current?.click()}
+              className="cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5 text-primary" />
               <span>이미지 업로드</span>
             </Button>
 
-            {avatarUrl && (
+            {hasCustomAvatar && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 disabled={isUploading}
                 onClick={handleDelete}
-                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>삭제</span>

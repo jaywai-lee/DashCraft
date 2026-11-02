@@ -51,7 +51,11 @@ export const SettingsView = ({ userEmail, avatarUrl }: SettingsViewProps) => {
         </div>
 
         <div className="space-y-6">
-          <ProfileSection userEmail={userEmail ?? ""} avatarUrl={avatarUrl} />
+          <ProfileSection
+            userEmail={userEmail ?? ""}
+            avatarUrl={avatarUrl}
+            onAvatarUpdated={() => router.refresh()}
+          />
           <PasswordChangeSection />
           <DeleteAccountSection userEmail={userEmail} />
         </div>

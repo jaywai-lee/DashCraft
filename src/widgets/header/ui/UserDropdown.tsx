@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/shared/lib/client";
+import { getAvatarPublicUrl } from "@/shared/lib/avatar";
 import {
   Dropdown,
   DropdownContent,
@@ -9,9 +11,8 @@ import {
   DropdownTrigger,
 } from "@/shared/ui/dropdown/Dropdown";
 import { Button } from "@/shared/ui/button";
-import { toast } from "sonner";
 import { User, Settings, LogOut, ChevronDown } from "lucide-react";
-import { createClient } from "@/shared/lib/client";
+import { toast } from "sonner";
 
 interface UserDropdownProps {
   userEmail?: string;
@@ -19,49 +20,37 @@ interface UserDropdownProps {
 }
 
 export const UserDropdown = ({
-  userEmail: initialEmail,
+  userEmail,
   avatarUrl: initialAvatarUrl,
 }: UserDropdownProps) => {
   const router = useRouter();
   const supabase = createClient();
-
-  const [email, setEmail] = useState<string | undefined>(initialEmail);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(
     initialAvatarUrl,
   );
-  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
-    const fetchUser = async () => {
+    const syncUserAvatar = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (user && isMounted) {
-        setEmail(user.email);
-        setAvatarUrl(user.user_metadata?.avatar_url as string | undefined);
-        setImageError(false);
+      if (isMounted && user) {
+        const computedUrl = getAvatarPublicUrl(user.user_metadata);
+        setAvatarUrl(computedUrl);
       }
     };
 
-    void fetchUser();
+    void syncUserAvatar();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!isMounted) return;
-
-      if (session?.user) {
-        setEmail(session.user.email);
-        setAvatarUrl(
-          session.user.user_metadata?.avatar_url as string | undefined,
-        );
-        setImageError(false);
-      } else {
-        setEmail(undefined);
-        setAvatarUrl(undefined);
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (isMounted) {
+        const computedUrl = getAvatarPublicUrl(session?.user?.user_metadata);
+        setAvatarUrl(computedUrl);
       }
     });
 
@@ -71,15 +60,7 @@ export const UserDropdown = ({
     };
   }, [supabase]);
 
-  useEffect(() => {
-    if (initialEmail !== undefined) setEmail(initialEmail);
-    if (initialAvatarUrl !== undefined) {
-      setAvatarUrl(initialAvatarUrl);
-      setImageError(false);
-    }
-  }, [initialEmail, initialAvatarUrl]);
-
-  const handleSignOut = async () => {
+  const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
       toast.error("로그아웃 실패", { description: error.message });
@@ -96,50 +77,44 @@ export const UserDropdown = ({
         <Button
           variant="ghost"
           size="sm"
-          className="gap-2 px-2 h-9 text-xs font-medium hover:bg-accent rounded-full sm:rounded-lg cursor-pointer"
+          className="h-9 px-2 gap-2 hover:bg-accent rounded-xl"
         >
-          <div className="w-7 h-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
-            {avatarUrl && !imageError ? (
-              // eslint-disable-next-line @next/next/no-img-element
+          <div className="w-6 h-6 rounded-full overflow-hidden bg-muted border border-border flex items-center justify-center shrink-0">
+            {avatarUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={avatarUrl}
-                alt="User Avatar"
+                alt="프로필"
                 className="w-full h-full object-cover"
-                onError={() => setImageError(true)}
               />
             ) : (
-              <User className="w-3.5 h-3.5 text-primary" />
+              <User className="w-3.5 h-3.5 text-muted-foreground" />
             )}
           </div>
-
-          <span className="hidden sm:inline-block max-w-[120px] truncate text-foreground font-semibold">
-            {email ? email.split("@")[0] : "사용자"}
+          <span className="text-xs font-semibold text-foreground max-w-[100px] truncate hidden md:inline-block">
+            {userEmail?.split("@")[0] || "계정"}
           </span>
-
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground hidden sm:block" />
+          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
         </Button>
       </DropdownTrigger>
 
       <DropdownContent align="right" className="w-48">
-        <div className="px-3 py-2 border-b space-y-0.5">
-          <p className="text-[10px] text-muted-foreground font-medium">
-            로그인 계정
-          </p>
-          <p className="text-xs font-bold text-foreground truncate">
-            {email ?? "계정 정보 없음"}
+        <div className="px-3 py-2 border-b border-border/50">
+          <p className="text-xs font-semibold text-foreground truncate">
+            {userEmail || "사용자 계정"}
           </p>
         </div>
 
         <DropdownItem onClick={() => router.push("/settings")}>
-          <Settings className="w-4 h-4 text-muted-foreground shrink-0" />
+          <Settings className="w-4 h-4 text-muted-foreground" />
           <span>계정 설정</span>
         </DropdownItem>
 
         <DropdownItem
-          onClick={handleSignOut}
-          className="text-destructive focus:text-destructive cursor-pointer"
+          onClick={handleLogout}
+          className="text-destructive focus:text-destructive"
         >
-          <LogOut className="w-4 h-4 text-destructive shrink-0" />
+          <LogOut className="w-4 h-4" />
           <span>로그아웃</span>
         </DropdownItem>
       </DropdownContent>

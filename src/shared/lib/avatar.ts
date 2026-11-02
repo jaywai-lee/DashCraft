@@ -1,25 +1,20 @@
-import { createClient } from "@/shared/lib/client";
-
-export interface UserMetadataLike {
-  avatar_path?: string | null;
-  avatar_url?: string | null;
-}
+import { createClient } from "./client";
 
 export const getAvatarPublicUrl = (
-  metadata?: UserMetadataLike | null,
+  userMetadata?: Record<string, unknown> | null,
 ): string | undefined => {
-  if (!metadata) return undefined;
+  if (!userMetadata) return undefined;
 
-  if (metadata.avatar_path) {
+  const avatarPath = userMetadata.avatar_path as string | undefined;
+  if (avatarPath) {
     const supabase = createClient();
-    const { data } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(metadata.avatar_path);
+    const { data } = supabase.storage.from("avatars").getPublicUrl(avatarPath);
     return data.publicUrl;
   }
 
-  if (metadata.avatar_url) {
-    return metadata.avatar_url;
+  const avatarUrl = userMetadata.avatar_url as string | undefined;
+  if (avatarUrl) {
+    return avatarUrl;
   }
 
   return undefined;
