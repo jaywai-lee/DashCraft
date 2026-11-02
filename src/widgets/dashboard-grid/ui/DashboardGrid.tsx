@@ -23,7 +23,6 @@ export const DashboardGrid = () => {
     localWidgets,
     activeWidget,
     handleDragStart,
-    handleDragOver,
     handleDragEnd,
     handleDragCancel,
     collisionDetection,
@@ -54,7 +53,6 @@ export const DashboardGrid = () => {
       sensors={sensors}
       collisionDetection={collisionDetection}
       onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
       modifiers={[restrictToWindowEdges]}

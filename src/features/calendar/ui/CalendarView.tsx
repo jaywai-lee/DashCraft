@@ -25,12 +25,7 @@ import { useCalendarSchedules } from "../model/useCalendarSchedules";
 
 const WEEK_DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
-interface CalendarViewProps {
-  userEmail?: string;
-  avatarUrl?: string;
-}
-
-export const CalendarView = ({ userEmail, avatarUrl }: CalendarViewProps) => {
+export const CalendarView = () => {
   const {
     currentDate,
     setCurrentDate,
@@ -96,11 +91,7 @@ export const CalendarView = ({ userEmail, avatarUrl }: CalendarViewProps) => {
 
   return (
     <div className="min-h-screen bg-muted/20 text-foreground flex flex-col">
-      <AppHeader
-        userEmail={userEmail}
-        avatarUrl={avatarUrl}
-        showSearchButton={false}
-      />
+      <AppHeader showSearchButton={false} />
 
       <main className="flex-1 max-w-[1800px] w-full mx-auto p-4 sm:p-6 flex flex-col space-y-4">
         <div className="bg-card border border-border rounded-2xl shadow-xs overflow-hidden flex flex-col flex-1">

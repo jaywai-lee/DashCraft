@@ -31,13 +31,5 @@ export default async function CalendarPage() {
     redirect("/login");
   }
 
-  const avatarPath = user.user_metadata?.avatar_path as string | undefined;
-  let avatarUrl: string | undefined = undefined;
-
-  if (avatarPath) {
-    const { data } = supabase.storage.from("avatars").getPublicUrl(avatarPath);
-    avatarUrl = data.publicUrl;
-  }
-
-  return <CalendarView userEmail={user.email} avatarUrl={avatarUrl} />;
+  return <CalendarView />;
 }
