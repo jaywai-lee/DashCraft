@@ -7,9 +7,9 @@ import { createOptimisticMutation } from "@/shared/lib/react-query/optimisticHel
 interface AddWidgetParams {
   type: WidgetRow["type"];
   title: string;
+  widgetId: string;
   color?: WidgetRow["color"];
   layout_w?: number;
-  widgetId?: string;
 }
 
 interface UpdateWidgetParams {
@@ -37,15 +37,13 @@ export const useAddWidgetMutation = () => {
       mutationFn: async ({
         type,
         title,
+        widgetId,
         color = "default",
         layout_w = 1,
-        widgetId,
       }) => {
-        const targetWidgetId = widgetId ?? crypto.randomUUID();
-
         const currentWidgets = (
           queryClient.getQueryData<WidgetRow[]>(queryKeys.widgets.list()) ?? []
-        ).filter((w) => w.widget_id !== targetWidgetId);
+        ).filter((w) => w.widget_id !== widgetId);
 
         const maxSortOrder =
           currentWidgets.length > 0
@@ -55,7 +53,7 @@ export const useAddWidgetMutation = () => {
         const config = type === "clock" ? DEFAULT_CLOCK_CONFIG : {};
 
         return dashboardRepository.insertWidget({
-          widget_id: targetWidgetId,
+          widget_id: widgetId,
           type,
           title,
           color,
@@ -76,7 +74,7 @@ export const useAddWidgetMutation = () => {
         const optimisticWidget: WidgetRow = {
           id: crypto.randomUUID(),
           user_id: "",
-          widget_id: newWidgetParams.widgetId ?? crypto.randomUUID(),
+          widget_id: newWidgetParams.widgetId,
           type: newWidgetParams.type,
           title: newWidgetParams.title,
           color: newWidgetParams.color ?? "default",
@@ -134,7 +132,7 @@ export const useUpdateWidgetMutation = () => {
             }),
           };
         }),
-      errorMessage: "위젯 수정 실패",
+      errorMessage: "위젯 설정 변경 실패",
     }),
   );
 };

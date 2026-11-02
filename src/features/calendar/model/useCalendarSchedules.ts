@@ -44,8 +44,16 @@ export const useCalendarSchedules = (
   }, [schedules]);
 
   const addSchedule = useCallback(
-    (params: { dateStr: string; title: string; time?: string }) => {
-      return addScheduleMutation.mutateAsync(params);
+    (params: {
+      dateStr: string;
+      title: string;
+      time?: string;
+      scheduleId?: string;
+    }) => {
+      return addScheduleMutation.mutateAsync({
+        ...params,
+        scheduleId: params.scheduleId ?? crypto.randomUUID(),
+      });
     },
     [addScheduleMutation],
   );

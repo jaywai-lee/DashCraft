@@ -6,8 +6,8 @@ import { createOptimisticMutation } from "@/shared/lib/react-query/optimisticHel
 interface AddScheduleParams {
   dateStr: string;
   title: string;
+  scheduleId: string;
   time?: string;
-  scheduleId?: string;
 }
 
 interface UpdateScheduleParams {
@@ -39,7 +39,7 @@ export const useAddScheduleMutation = (startDate: string, endDate: string) => {
       queryKey,
       mutationFn: ({ dateStr, title, time, scheduleId }) =>
         scheduleRepository.insertSchedule({
-          schedule_id: scheduleId ?? crypto.randomUUID(),
+          schedule_id: scheduleId,
           date_str: dateStr,
           title,
           time_str: time ?? null,
@@ -51,7 +51,7 @@ export const useAddScheduleMutation = (startDate: string, endDate: string) => {
         const optimisticSchedule: ScheduleRow = {
           id: crypto.randomUUID(),
           user_id: "",
-          schedule_id: scheduleId ?? crypto.randomUUID(),
+          schedule_id: scheduleId,
           date_str: dateStr,
           title,
           time_str: time ?? null,

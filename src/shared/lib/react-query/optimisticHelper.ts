@@ -29,6 +29,7 @@ export function createOptimisticMutation<TData, TVariables, TQueryData>({
   MutationContext<TQueryData>
 > {
   return {
+    mutationKey: queryKey,
     mutationFn,
     onMutate: async (variables: TVariables) => {
       await queryClient.cancelQueries({ queryKey });
@@ -48,7 +49,9 @@ export function createOptimisticMutation<TData, TVariables, TQueryData>({
       toast.error(errorMessage, { description: err.message });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey });
+      if (queryClient.isMutating({ mutationKey: queryKey }) === 1) {
+        queryClient.invalidateQueries({ queryKey });
+      }
     },
   };
 }
