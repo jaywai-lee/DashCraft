@@ -6,7 +6,7 @@ import { createOptimisticMutation } from "@/shared/lib/react-query/optimisticHel
 interface AddDDayParams {
   title: string;
   targetDate: string;
-  ddayId?: string;
+  ddayId: string;
 }
 
 export const useDDaysQuery = (widgetId: string) => {
@@ -28,7 +28,7 @@ export const useAddDDayMutation = (widgetId: string) => {
       mutationFn: ({ title, targetDate, ddayId }) =>
         ddayRepository.insertDDay({
           widget_id: widgetId,
-          dday_id: ddayId ?? crypto.randomUUID(),
+          dday_id: ddayId,
           title,
           target_date: targetDate,
         }),
@@ -37,7 +37,7 @@ export const useAddDDayMutation = (widgetId: string) => {
           id: crypto.randomUUID(),
           user_id: "",
           widget_id: widgetId,
-          dday_id: ddayId ?? crypto.randomUUID(),
+          dday_id: ddayId,
           title,
           target_date: targetDate,
           created_at: new Date().toISOString(),

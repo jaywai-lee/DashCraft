@@ -5,7 +5,7 @@ import { createOptimisticMutation } from "@/shared/lib/react-query/optimisticHel
 
 export interface AddTodoParams {
   text: string;
-  todoId?: string;
+  todoId: string;
 }
 
 export const useTodosQuery = (widgetId: string) => {
@@ -24,12 +24,11 @@ export const useAddTodoMutation = (widgetId: string) => {
       queryClient,
       queryKey: queryKeys.todos.byWidget(widgetId),
       mutationFn: async ({ text, todoId }) => {
-        const targetTodoId = todoId ?? crypto.randomUUID();
         const currentTodos = (
           queryClient.getQueryData<TodoRow[]>(
             queryKeys.todos.byWidget(widgetId),
           ) ?? []
-        ).filter((t) => t.todo_id !== targetTodoId);
+        ).filter((t) => t.todo_id !== todoId);
 
         const nextSortOrder =
           currentTodos.length > 0
@@ -38,7 +37,7 @@ export const useAddTodoMutation = (widgetId: string) => {
 
         return todoRepository.insertTodo({
           widget_id: widgetId,
-          todo_id: targetTodoId,
+          todo_id: todoId,
           text,
           completed: false,
           sort_order: nextSortOrder,
@@ -54,7 +53,7 @@ export const useAddTodoMutation = (widgetId: string) => {
           id: crypto.randomUUID(),
           user_id: "",
           widget_id: widgetId,
-          todo_id: todoId ?? crypto.randomUUID(),
+          todo_id: todoId,
           text,
           completed: false,
           sort_order: nextSortOrder,
