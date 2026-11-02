@@ -20,11 +20,13 @@ interface UserDropdownProps {
 }
 
 export const UserDropdown = ({
-  userEmail,
+  userEmail: initialEmail,
   avatarUrl: initialAvatarUrl,
 }: UserDropdownProps) => {
   const router = useRouter();
   const supabase = createClient();
+
+  const [email, setEmail] = useState<string | undefined>(initialEmail);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(
     initialAvatarUrl,
   );
@@ -32,25 +34,34 @@ export const UserDropdown = ({
   useEffect(() => {
     let isMounted = true;
 
-    const syncUserAvatar = async () => {
+    const syncUserInfo = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (isMounted && user) {
+        if (!initialEmail && user.email) {
+          setEmail(user.email);
+        }
         const computedUrl = getAvatarPublicUrl(user.user_metadata);
         setAvatarUrl(computedUrl);
       }
     };
 
-    void syncUserAvatar();
+    void syncUserInfo();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (isMounted) {
-        const computedUrl = getAvatarPublicUrl(session?.user?.user_metadata);
-        setAvatarUrl(computedUrl);
+        if (session?.user) {
+          setEmail(session.user.email);
+          const computedUrl = getAvatarPublicUrl(session.user.user_metadata);
+          setAvatarUrl(computedUrl);
+        } else {
+          setEmail(undefined);
+          setAvatarUrl(undefined);
+        }
       }
     });
 
@@ -58,7 +69,12 @@ export const UserDropdown = ({
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, initialEmail]);
+
+  useEffect(() => {
+    if (initialEmail !== undefined) setEmail(initialEmail);
+    if (initialAvatarUrl !== undefined) setAvatarUrl(initialAvatarUrl);
+  }, [initialEmail, initialAvatarUrl]);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -77,7 +93,7 @@ export const UserDropdown = ({
         <Button
           variant="ghost"
           size="sm"
-          className="h-9 px-2 gap-2 hover:bg-accent rounded-xl"
+          className="h-9 px-2 gap-2 hover:bg-accent rounded-xl cursor-pointer"
         >
           <div className="w-6 h-6 rounded-full overflow-hidden bg-muted border border-border flex items-center justify-center shrink-0">
             {avatarUrl ? (
@@ -92,7 +108,7 @@ export const UserDropdown = ({
             )}
           </div>
           <span className="text-xs font-semibold text-foreground max-w-[100px] truncate hidden md:inline-block">
-            {userEmail?.split("@")[0] || "계정"}
+            {email?.split("@")[0] || "계정"}
           </span>
           <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
         </Button>
@@ -101,7 +117,7 @@ export const UserDropdown = ({
       <DropdownContent align="right" className="w-48">
         <div className="px-3 py-2 border-b border-border/50">
           <p className="text-xs font-semibold text-foreground truncate">
-            {userEmail || "사용자 계정"}
+            {email || "사용자 계정"}
           </p>
         </div>
 
@@ -112,7 +128,7 @@ export const UserDropdown = ({
 
         <DropdownItem
           onClick={handleLogout}
-          className="text-destructive focus:text-destructive"
+          className="text-destructive focus:text-destructive cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
           <span>로그아웃</span>
