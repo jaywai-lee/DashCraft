@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/shared/lib/client";
+import { resizeImageToWebP } from "@/shared/lib/imageResizer";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -17,7 +18,7 @@ export const useProfileAvatar = () => {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다.");
 
-      const blob = await resizeImage(file, 512, 512);
+      const blob = await resizeImageToWebP(file, 512, 512);
       const extension = blob.type === "image/png" ? "png" : "webp";
       const contentType = blob.type;
 
@@ -112,52 +113,3 @@ export const useProfileAvatar = () => {
 
   return { isUploading, uploadAvatar, deleteAvatar };
 };
-
-async function resizeImage(
-  file: File,
-  maxWidth: number,
-  maxHeight: number,
-): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(img.src);
-      const canvas = document.createElement("canvas");
-      let width = img.width;
-      let height = img.height;
-
-      if (width > height) {
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-      } else {
-        if (height > maxHeight) {
-          width = Math.round((width * maxHeight) / height);
-          height = maxHeight;
-        }
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        reject(new Error("Canvas 컨텍스트 생성 실패"));
-        return;
-      }
-
-      ctx.drawImage(img, 0, 0, width, height);
-
-      canvas.toBlob(
-        (blob) => {
-          if (blob) resolve(blob);
-          else reject(new Error("이미지 압축 실패"));
-        },
-        "image/webp",
-        0.85,
-      );
-    };
-    img.onerror = (err) => reject(err);
-  });
-}
