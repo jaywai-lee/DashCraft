@@ -1,67 +1,59 @@
 "use client";
 
+import { useState } from "react";
 import { createClient } from "@/shared/lib/client";
 import { resizeImageToWebP } from "@/shared/lib/imageResizer";
-import { useState } from "react";
 import { toast } from "sonner";
 
 export const useProfileAvatar = () => {
-  const [isUploading, setIsUploading] = useState(false);
   const supabase = createClient();
+  const [isUploading, setIsUploading] = useState(false);
 
   const uploadAvatar = async (file: File): Promise<string | null> => {
-    try {
-      setIsUploading(true);
+    setIsUploading(true);
 
+    try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
       if (!user) throw new Error("로그인이 필요합니다.");
 
-      const blob = await resizeImageToWebP(file, 512, 512);
-      const extension = blob.type === "image/png" ? "png" : "webp";
-      const contentType = blob.type;
-
-      const oldAvatarPath = user.user_metadata?.avatar_path as
-        string | undefined;
-      const newFilePath = `${user.id}/${Date.now()}.${extension}`;
+      const resizedBlob = await resizeImageToWebP(file, 200, 200);
+      const filePath = `${user.id}/${Date.now()}.webp`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(newFilePath, blob, { contentType, upsert: true });
+        .upload(filePath, resizedBlob, {
+          contentType: "image/webp",
+          upsert: false,
+        });
 
-      if (uploadError) {
-        throw new Error(uploadError.message);
-      }
+      if (uploadError) throw uploadError;
+
+      const oldAvatarPath = user.user_metadata?.avatar_path as
+        string | undefined;
 
       const { error: updateError } = await supabase.auth.updateUser({
-        data: { avatar_path: newFilePath },
+        data: {
+          avatar_path: filePath,
+        },
       });
 
       if (updateError) {
-        await supabase.storage.from("avatars").remove([newFilePath]);
-        throw new Error(updateError.message);
+        await supabase.storage.from("avatars").remove([filePath]);
+        throw updateError;
       }
 
-      if (oldAvatarPath) {
-        const { error: removeError } = await supabase.storage
-          .from("avatars")
-          .remove([oldAvatarPath]);
-        if (removeError) {
-          console.error("구 아바타 파일 삭제 실패:", removeError);
-        }
+      if (oldAvatarPath && oldAvatarPath !== filePath) {
+        await supabase.storage.from("avatars").remove([oldAvatarPath]);
       }
 
       toast.success("프로필 이미지가 변경되었습니다.");
-      return newFilePath;
+      return filePath;
     } catch (err: unknown) {
       const message =
-        err instanceof Error
-          ? err.message
-          : typeof err === "object" && err !== null && "message" in err
-            ? String((err as { message: unknown }).message)
-            : "알 수 없는 오류";
-
+        err instanceof Error ? err.message : "업로드 중 오류가 발생했습니다.";
       toast.error("아바타 업로드 실패", { description: message });
       return null;
     } finally {
@@ -69,47 +61,45 @@ export const useProfileAvatar = () => {
     }
   };
 
-  const deleteAvatar = async () => {
+  const deleteAvatar = async (): Promise<boolean> => {
+    setIsUploading(true);
+
     try {
-      setIsUploading(true);
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
       if (!user) throw new Error("로그인이 필요합니다.");
 
-      const oldAvatarPath = user.user_metadata?.avatar_path as
-        string | undefined;
+      const avatarPath = user.user_metadata?.avatar_path as string | undefined;
 
       const { error: updateError } = await supabase.auth.updateUser({
-        data: { avatar_path: null },
+        data: {
+          avatar_path: null,
+        },
       });
-      if (updateError) {
-        throw new Error(updateError.message);
-      }
 
-      if (oldAvatarPath) {
-        const { error: removeError } = await supabase.storage
-          .from("avatars")
-          .remove([oldAvatarPath]);
-        if (removeError) {
-          console.error("아바타 스토리지 파일 삭제 실패:", removeError);
-        }
+      if (updateError) throw updateError;
+
+      if (avatarPath) {
+        await supabase.storage.from("avatars").remove([avatarPath]);
       }
 
       toast.success("프로필 이미지가 삭제되었습니다.");
+      return true;
     } catch (err: unknown) {
       const message =
-        err instanceof Error
-          ? err.message
-          : typeof err === "object" && err !== null && "message" in err
-            ? String((err as { message: unknown }).message)
-            : "알 수 없는 오류";
-
-      toast.error("아바타 삭제 실패", { description: message });
+        err instanceof Error ? err.message : "삭제 중 오류가 발생했습니다.";
+      toast.error("이미지 삭제 실패", { description: message });
+      return false;
     } finally {
       setIsUploading(false);
     }
   };
 
-  return { isUploading, uploadAvatar, deleteAvatar };
+  return {
+    isUploading,
+    uploadAvatar,
+    deleteAvatar,
+  };
 };
