@@ -49,8 +49,8 @@ export const ScheduleModal = ({
     }
   }, [scheduleToEdit, isOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.SyntheticEvent) => {
+    e?.preventDefault();
     if (!title.trim()) return;
 
     await onSave({

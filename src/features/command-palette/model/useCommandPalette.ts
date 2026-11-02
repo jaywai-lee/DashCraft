@@ -10,7 +10,7 @@ export const useCommandPalette = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (pathname !== "/dashboard") return;
+      if (!pathname.startsWith("/dashboard")) return;
 
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();

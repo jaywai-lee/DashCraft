@@ -14,12 +14,14 @@ interface AppHeaderProps {
   userEmail?: string;
   avatarUrl?: string;
   children?: React.ReactNode;
+  showSearchButton?: boolean;
 }
 
 export const AppHeader = ({
   userEmail,
   avatarUrl,
   children,
+  showSearchButton,
 }: AppHeaderProps) => {
   const pathname = usePathname();
   const toggleCommandPalette = useCommandPaletteStore((s) => s.toggle);
@@ -27,8 +29,10 @@ export const AppHeader = ({
   const isDashboard = pathname.startsWith("/dashboard");
   const isCalendar = pathname.startsWith("/calendar");
 
+  const shouldShowSearch = showSearchButton ?? isDashboard;
+
   return (
-    <header className="px-4 sm:px-6 h-16 flex items-center justify-between gap-4 border-b bg-background/80 backdrop-blur-md sticky top-0 z-[100] w-full">
+    <header className="px-4 sm:px-6 h-16 flex items-center justify-between gap-4 border-b bg-background/80 backdrop-blur-md sticky top-0 z-40 w-full">
       <div className="flex items-center gap-4 sm:gap-6">
         <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
           <div className="p-1.5 bg-primary text-primary-foreground rounded-lg">
@@ -73,18 +77,20 @@ export const AppHeader = ({
       <div className="flex items-center gap-2">
         {children}
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={toggleCommandPalette}
-          className="h-9 px-2.5 text-xs gap-2 text-muted-foreground hidden md:flex items-center"
-          title="빠른 명령 실행 (⌘K)"
-        >
-          <Search className="w-3.5 h-3.5" />
-          <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-muted rounded border border-border">
-            ⌘K
-          </kbd>
-        </Button>
+        {shouldShowSearch && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleCommandPalette}
+            className="h-9 px-2.5 text-xs gap-2 text-muted-foreground hidden md:flex items-center cursor-pointer"
+            title="빠른 명령 실행 (⌘K)"
+          >
+            <Search className="w-3.5 h-3.5" />
+            <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-muted rounded border border-border">
+              ⌘K
+            </kbd>
+          </Button>
+        )}
 
         <ThemeToggle />
 

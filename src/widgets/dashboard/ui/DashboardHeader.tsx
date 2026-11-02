@@ -24,7 +24,7 @@ export const DashboardHeader = memo(
               <AddWidgetMenu variant="desktop" />
 
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={onOpenResetModal}
                 className="h-9 w-9 p-0 text-muted-foreground hover:text-foreground"

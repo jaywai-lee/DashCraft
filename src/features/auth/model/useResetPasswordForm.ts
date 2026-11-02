@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/shared/lib/client";
 import { toast } from "sonner";
+import { createClient } from "@/shared/lib/client";
 
 export const useResetPasswordForm = () => {
   const router = useRouter();
@@ -15,19 +15,33 @@ export const useResetPasswordForm = () => {
 
   useEffect(() => {
     let isMounted = true;
+    let isRecovery = false;
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
 
-      if (event === "PASSWORD_RECOVERY" || session?.user) {
+      if (event === "PASSWORD_RECOVERY") {
+        isRecovery = true;
         return;
       }
 
-      if ((event === "INITIAL_SESSION" || event === "SIGNED_OUT") && !session) {
+      if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
+        if (!isRecovery) {
+          toast.error("유효한 비밀번호 재설정 세션이 없습니다.", {
+            description: "비밀번호 재설정 링크를 다시 요청해 주세요.",
+          });
+
+          if (session?.user) {
+            router.replace("/settings");
+          } else {
+            router.replace("/forgot-password");
+          }
+        }
+      } else if (event === "SIGNED_OUT" && !isRecovery) {
         toast.error("유효한 비밀번호 재설정 세션이 없습니다.", {
-          description: "비밀번호 재설정 링크를 다시 요청해주세요.",
+          description: "비밀번호 재설정 링크를 다시 요청해 주세요.",
         });
         router.replace("/forgot-password");
       }
@@ -42,8 +56,8 @@ export const useResetPasswordForm = () => {
   const handleResetPassword = async (e: React.SubmitEvent) => {
     e.preventDefault();
 
-    if (password.length < 6) {
-      toast.error("비밀번호는 최소 6자 이상이어야 합니다.");
+    if (password.length < 8) {
+      toast.error("비밀번호는 최소 8자 이상이어야 합니다.");
       return;
     }
 
@@ -66,7 +80,8 @@ export const useResetPasswordForm = () => {
     }
 
     toast.success("비밀번호가 성공적으로 변경되었습니다.");
-    router.push("/dashboard");
+    router.push("/login");
+    router.refresh();
   };
 
   return {
