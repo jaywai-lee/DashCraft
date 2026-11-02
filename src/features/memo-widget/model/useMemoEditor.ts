@@ -3,14 +3,17 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { sanitizeMemoHtml } from "@/shared/lib/sanitize";
 import { toast } from "sonner";
-import {
-  useMemoQuery,
-  useUpsertMemoMutation,
-} from "@/features/memo-widget/api/useMemoQuery";
-import { MemoRow } from "@/features/memo-widget/api/memoRepository";
-import { flushMemoKeepalive } from "@/features/memo-widget/api/memoKeepalive";
+import { useMemoQuery, useUpsertMemoMutation } from "../api/useMemoQuery";
+import { flushMemoKeepalive } from "../api/memoKeepalive";
+import { useTextHighLighter } from "@/shared/lib/useTextHighlighter";
+import { HighlightColor } from "@/shared/config/highlight.config";
 
 const MAX_INNER_HTML_LENGTH = 10000;
+
+const getPlainTextLength = (element: HTMLElement | null): number => {
+  if (!element) return 0;
+  return element.innerText.replace(/\u200B/g, "").length;
+};
 
 export const useMemoEditor = (widgetId: string) => {
   const editorRef = useRef<HTMLDivElement>(null);
@@ -18,39 +21,73 @@ export const useMemoEditor = (widgetId: string) => {
   const upsertMemoMutation = useUpsertMemoMutation(widgetId);
 
   const [contentLength, setContentLength] = useState(0);
+  const [currentHighlight, setCurrentHighlight] =
+    useState<HighlightColor>("none");
+
   const lastSavedContentRef = useRef<string>("");
-  const currentHighlightRef = useRef<MemoRow["highlight"]>("none");
+  const currentHighlightRef = useRef<HighlightColor>("none");
   const isFocusedRef = useRef(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const memoContent = memoData?.content;
+  const memoHighlight = memoData?.highlight;
+
   useEffect(() => {
-    if (memoData && editorRef.current && !isFocusedRef.current) {
-      const sanitized = sanitizeMemoHtml(memoData.content || "");
-      if (editorRef.current.innerHTML !== sanitized) {
-        editorRef.current.innerHTML = sanitized;
-        lastSavedContentRef.current = sanitized;
-        setContentLength(sanitized.length);
+    if (memoContent !== undefined || memoHighlight !== undefined) {
+      const initialHighlight = (memoHighlight as HighlightColor) || "none";
+      currentHighlightRef.current = initialHighlight;
+      setCurrentHighlight(initialHighlight);
+
+      if (editorRef.current && !isFocusedRef.current) {
+        const sanitized = sanitizeMemoHtml(memoContent || "");
+        if (editorRef.current.innerHTML !== sanitized) {
+          editorRef.current.innerHTML = sanitized;
+          lastSavedContentRef.current = sanitized;
+        }
+        setContentLength(getPlainTextLength(editorRef.current));
       }
-      currentHighlightRef.current = memoData.highlight || "none";
     }
-  }, [memoData]);
+  }, [memoContent, memoHighlight]);
 
   const saveContent = useCallback(
-    (currentHtml: string) => {
+    (currentHtml: string, highlight?: HighlightColor) => {
       const sanitized = sanitizeMemoHtml(currentHtml);
-      if (sanitized === lastSavedContentRef.current) return;
+      const targetHighlight = highlight ?? currentHighlightRef.current;
+
+      if (
+        sanitized === lastSavedContentRef.current &&
+        targetHighlight === currentHighlightRef.current
+      ) {
+        return;
+      }
 
       upsertMemoMutation.mutate(
-        { content: sanitized, highlight: currentHighlightRef.current },
+        { content: sanitized, highlight: targetHighlight },
         {
           onSuccess: () => {
             lastSavedContentRef.current = sanitized;
+            currentHighlightRef.current = targetHighlight;
           },
         },
       );
     },
     [upsertMemoMutation],
   );
+
+  const { applyHighlight, exitHighlightOnKey } = useTextHighLighter(
+    editorRef,
+    (newHtml) => {
+      if (!editorRef.current) return;
+      setContentLength(getPlainTextLength(editorRef.current));
+      saveContent(newHtml);
+    },
+  );
+
+  const handleSelectHighlightColor = (color: HighlightColor) => {
+    setCurrentHighlight(color);
+    currentHighlightRef.current = color;
+    applyHighlight(color);
+  };
 
   const flushCurrentContent = useCallback(() => {
     if (debounceTimerRef.current) {
@@ -60,7 +97,11 @@ export const useMemoEditor = (widgetId: string) => {
     if (editorRef.current) {
       const currentHtml = editorRef.current.innerHTML;
       const sanitized = sanitizeMemoHtml(currentHtml);
-      if (sanitized !== lastSavedContentRef.current) {
+      if (
+        sanitized !== lastSavedContentRef.current ||
+        currentHighlightRef.current !==
+          ((memoData?.highlight as HighlightColor) ?? "none")
+      ) {
         flushMemoKeepalive(
           widgetId,
           sanitized,
@@ -69,7 +110,7 @@ export const useMemoEditor = (widgetId: string) => {
         lastSavedContentRef.current = sanitized;
       }
     }
-  }, [widgetId]);
+  }, [widgetId, memoData?.highlight]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -96,11 +137,11 @@ export const useMemoEditor = (widgetId: string) => {
     if (currentHtml.length > MAX_INNER_HTML_LENGTH) {
       toast.warning("메모 용량 한도(10,000자)에 도달했습니다.");
       editorRef.current.innerHTML = lastSavedContentRef.current;
-      setContentLength(lastSavedContentRef.current.length);
+      setContentLength(getPlainTextLength(editorRef.current));
       return;
     }
 
-    setContentLength(currentHtml.length);
+    setContentLength(getPlainTextLength(editorRef.current));
 
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     debounceTimerRef.current = setTimeout(() => {
@@ -111,14 +152,22 @@ export const useMemoEditor = (widgetId: string) => {
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     e.preventDefault();
     const plainText = e.clipboardData.getData("text/plain");
+    if (!plainText) return;
 
-    if (plainText) {
-      document.execCommand("insertText", false, plainText);
-    } else {
-      const htmlText = e.clipboardData.getData("text/html");
-      const sanitizedPaste = sanitizeMemoHtml(htmlText);
-      document.execCommand("insertHTML", false, sanitizedPaste);
-    }
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    range.deleteContents();
+
+    const textNode = document.createTextNode(plainText);
+    range.insertNode(textNode);
+
+    range.setStartAfter(textNode);
+    range.setEndAfter(textNode);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
     handleInput();
   };
 
@@ -143,6 +192,9 @@ export const useMemoEditor = (widgetId: string) => {
     isLoading,
     isSaving: upsertMemoMutation.isPending,
     maxLimit: MAX_INNER_HTML_LENGTH,
+    currentHighlight,
+    handleSelectHighlightColor,
+    exitHighlightOnKey,
     handleInput,
     handlePaste,
     handleBlur,
