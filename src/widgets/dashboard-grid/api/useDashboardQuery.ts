@@ -49,11 +49,12 @@ export const useAddWidgetMutation = () => {
       layout_w = 1,
       widgetId,
     }) => {
+      const targetWidgetId = widgetId || crypto.randomUUID();
       const currentWidgets =
         queryClient.getQueryData<WidgetRow[]>(queryKeys.widgets.list()) ?? [];
 
       const otherWidgets = currentWidgets.filter(
-        (w) => w.widget_id !== widgetId,
+        (w) => w.widget_id !== targetWidgetId,
       );
 
       const config = WIDGET_CONFIG_MAP[type as keyof typeof WIDGET_CONFIG_MAP];
@@ -63,8 +64,8 @@ export const useAddWidgetMutation = () => {
         inputTitle || generateNextWidgetTitle(type, otherWidgets, baseTitle);
 
       const maxSortOrder =
-        currentWidgets.length > 0
-          ? Math.max(...currentWidgets.map((w) => w.sort_order))
+        otherWidgets.length > 0
+          ? Math.max(...otherWidgets.map((w) => w.sort_order))
           : 0;
       const nextSortOrder = maxSortOrder + 1;
 
@@ -72,7 +73,7 @@ export const useAddWidgetMutation = () => {
       const clockConfig = isClock ? DEFAULT_CLOCK_CONFIG : {};
 
       return dashboardRepository.insertWidget({
-        widget_id: widgetId,
+        widget_id: targetWidgetId,
         type,
         title: finalTitle,
         color,
@@ -87,6 +88,9 @@ export const useAddWidgetMutation = () => {
     },
     onMutate: async (newWidgetParams) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.widgets.list() });
+
+      const targetWidgetId = newWidgetParams.widgetId || crypto.randomUUID();
+      newWidgetParams.widgetId = targetWidgetId;
 
       const previousWidgets =
         queryClient.getQueryData<WidgetRow[]>(queryKeys.widgets.list()) ?? [];
@@ -115,7 +119,7 @@ export const useAddWidgetMutation = () => {
       const optimisticWidget: WidgetRow = {
         id: crypto.randomUUID(),
         user_id: "",
-        widget_id: newWidgetParams.widgetId,
+        widget_id: targetWidgetId,
         type: newWidgetParams.type,
         title: finalTitle,
         color: newWidgetParams.color ?? "default",

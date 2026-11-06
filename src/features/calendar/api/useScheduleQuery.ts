@@ -6,8 +6,9 @@ import { createOptimisticMutation } from "@/shared/lib/react-query/optimisticHel
 interface AddScheduleParams {
   dateStr: string;
   title: string;
-  scheduleId: string;
   time?: string;
+  color?: string;
+  scheduleId?: string;
 }
 
 interface UpdateScheduleParams {
@@ -15,6 +16,7 @@ interface UpdateScheduleParams {
   dateStr: string;
   title: string;
   time?: string;
+  color?: string;
 }
 
 interface DeleteScheduleParams {
@@ -37,25 +39,26 @@ export const useAddScheduleMutation = (startDate: string, endDate: string) => {
     createOptimisticMutation<ScheduleRow, AddScheduleParams, ScheduleRow[]>({
       queryClient,
       queryKey,
-      mutationFn: ({ dateStr, title, time, scheduleId }) =>
+      mutationFn: ({ dateStr, title, time, color, scheduleId }) =>
         scheduleRepository.insertSchedule({
-          schedule_id: scheduleId,
+          schedule_id: scheduleId ?? crypto.randomUUID(),
           date_str: dateStr,
           title,
           time_str: time ?? null,
+          color: color ?? null,
         }),
       updateCache: (
         oldSchedules = [],
-        { dateStr, title, time, scheduleId },
+        { dateStr, title, time, color, scheduleId },
       ) => {
         const optimisticSchedule: ScheduleRow = {
           id: crypto.randomUUID(),
           user_id: "",
-          schedule_id: scheduleId,
+          schedule_id: scheduleId ?? crypto.randomUUID(),
           date_str: dateStr,
           title,
           time_str: time ?? null,
-          color: null,
+          color: color ?? null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
@@ -77,15 +80,16 @@ export const useUpdateScheduleMutation = (
     createOptimisticMutation<ScheduleRow, UpdateScheduleParams, ScheduleRow[]>({
       queryClient,
       queryKey,
-      mutationFn: ({ scheduleId, title, time }) =>
+      mutationFn: ({ scheduleId, title, time, color }) =>
         scheduleRepository.updateSchedule(scheduleId, {
           title,
           time_str: time ?? null,
+          color: color ?? null, // 💡 Supabase DB로 color 저장
         }),
-      updateCache: (oldSchedules = [], { scheduleId, title, time }) =>
+      updateCache: (oldSchedules = [], { scheduleId, title, time, color }) =>
         oldSchedules.map((s) =>
           s.schedule_id === scheduleId
-            ? { ...s, title, time_str: time ?? null }
+            ? { ...s, title, time_str: time ?? null, color: color ?? null }
             : s,
         ),
       errorMessage: "일정 수정 실패",
