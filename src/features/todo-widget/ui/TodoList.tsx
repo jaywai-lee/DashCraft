@@ -77,7 +77,6 @@ const TodoItem = memo(
               className="flex-1 min-w-0 bg-background border rounded px-2 text-xs h-7 outline-none focus:ring-1 focus:ring-primary"
             />
             <div className="flex items-center shrink-0 ml-auto gap-0.5">
-              {/* onMouseDown={(e) => e.preventDefault()}로 input blur 선발동 차단 */}
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}

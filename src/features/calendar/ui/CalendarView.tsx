@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
   format,
   startOfMonth,
@@ -13,14 +13,14 @@ import {
   addYears,
   subYears,
 } from "date-fns";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { AppHeader } from "@/widgets/header/ui/AppHeader";
-import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/utils";
 import { CalendarCell } from "./CalendarCell";
 import { CalendarHeader } from "./CalendarHeader";
 import { ScheduleModal } from "./ScheduleModal";
-import { SCHEDULE_COLOR_STYLES } from "../model/constants";
+import { DaySchedulePopover } from "./DaySchedulePopover";
+import { MobileScheduleList } from "./MobileScheduleList";
 import { useCalendarNavigation } from "../model/useCalendarNavigation";
 import { useScheduleModal } from "../model/useScheduleModal";
 import { useCalendarSchedules } from "../model/useCalendarSchedules";
@@ -28,6 +28,8 @@ import { useCalendarSchedules } from "../model/useCalendarSchedules";
 const WEEK_DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 export const CalendarView = () => {
+  const [popoverDateStr, setPopoverDateStr] = useState<string | null>(null);
+
   const {
     currentDate,
     setCurrentDate,
@@ -99,6 +101,10 @@ export const CalendarView = () => {
     ? (schedulesMap.get(selectedDateStr) ?? [])
     : [];
 
+  const popoverSchedules = popoverDateStr
+    ? (schedulesMap.get(popoverDateStr) ?? [])
+    : [];
+
   return (
     <div className="min-h-screen bg-muted/20 text-foreground flex flex-col">
       <AppHeader showSearchButton={false} />
@@ -152,6 +158,7 @@ export const CalendarView = () => {
                     daySchedules={daySchedules}
                     onSelectDate={selectDate}
                     onOpenModal={openAddModal}
+                    onOpenPopover={(dStr) => setPopoverDateStr(dStr)}
                     onEditSchedule={(_dStr, schedule) => {
                       const target = schedules.find(
                         (s) => s.schedule_id === schedule.id,
@@ -168,89 +175,30 @@ export const CalendarView = () => {
           </div>
         </div>
 
-        {selectedDateStr && (
-          <div className="block sm:hidden bg-card border border-border rounded-2xl p-4 space-y-3 shadow-xs animate-in fade-in slide-in-from-bottom-2 duration-200">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">
-                {selectedDateStr} 일정
-              </h3>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs px-2 cursor-pointer"
-                onClick={() => openAddModal(selectedDateStr)}
-              >
-                + 일정 추가
-              </Button>
-            </div>
-
-            {selectedDaySchedules.length > 0 ? (
-              <div className="space-y-2">
-                {selectedDaySchedules.map((item) => {
-                  const style =
-                    SCHEDULE_COLOR_STYLES[item.color || "default"] ||
-                    SCHEDULE_COLOR_STYLES.default;
-
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => {
-                        const target = schedules.find(
-                          (s) => s.schedule_id === item.id,
-                        );
-                        if (target) openEditModal(target);
-                      }}
-                      className={cn(
-                        "p-2.5 border rounded-lg flex items-center justify-between active:opacity-80 cursor-pointer transition-colors",
-                        style.bg,
-                        style.border,
-                      )}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        {item.time && (
-                          <span
-                            className={cn(
-                              "px-1.5 py-0.5 text-xs font-mono font-semibold rounded shrink-0",
-                              style.timeBg,
-                              style.text,
-                            )}
-                          >
-                            {item.time}
-                          </span>
-                        )}
-                        <span
-                          className={cn(
-                            "text-xs font-medium truncate",
-                            style.text,
-                          )}
-                        >
-                          {item.title}
-                        </span>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteSchedule(item.id);
-                        }}
-                        className="p-1.5 text-rose-500 hover:text-rose-700 rounded-md active:bg-rose-50 cursor-pointer"
-                        title="삭제"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground py-2 text-center">
-                등록된 일정이 없습니다.
-              </p>
-            )}
-          </div>
-        )}
+        <MobileScheduleList
+          selectedDateStr={selectedDateStr}
+          schedules={selectedDaySchedules}
+          onAddSchedule={openAddModal}
+          onEditSchedule={(id) => {
+            const target = schedules.find((s) => s.schedule_id === id);
+            if (target) openEditModal(target);
+          }}
+          onDeleteSchedule={deleteSchedule}
+        />
       </main>
+
+      <DaySchedulePopover
+        dateStr={popoverDateStr ?? ""}
+        schedules={popoverSchedules}
+        isOpen={Boolean(popoverDateStr)}
+        onClose={() => setPopoverDateStr(null)}
+        onAddSchedule={(dStr) => openAddModal(dStr)}
+        onEditSchedule={(schedule) => {
+          const target = schedules.find((s) => s.schedule_id === schedule.id);
+          if (target) openEditModal(target);
+        }}
+        onDeleteSchedule={deleteSchedule}
+      />
 
       <ScheduleModal
         isOpen={isOpen}

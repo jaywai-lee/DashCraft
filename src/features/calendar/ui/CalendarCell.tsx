@@ -16,6 +16,7 @@ interface CalendarCellProps {
   daySchedules: ScheduleItem[];
   onSelectDate: (dateStr: string) => void;
   onOpenModal: (dateStr: string) => void;
+  onOpenPopover: (dateStr: string) => void;
   onEditSchedule: (dateStr: string, schedule: ScheduleItem) => void;
   onRemoveSchedule: (dateStr: string, id: string) => void;
 }
@@ -30,6 +31,7 @@ export const CalendarCell = memo(
     daySchedules,
     onSelectDate,
     onOpenModal,
+    onOpenPopover,
     onEditSchedule,
     onRemoveSchedule,
   }: CalendarCellProps) => {
@@ -38,6 +40,9 @@ export const CalendarCell = memo(
     const isSaturday = dayOfWeek === 6;
     const holidayInfo = getKoreanHolidayInfo(date);
     const isHoliday = isSunday || Boolean(holidayInfo);
+
+    const visibleSchedules = daySchedules.slice(0, 2);
+    const hiddenCount = daySchedules.length - 2;
 
     return (
       <div
@@ -98,8 +103,8 @@ export const CalendarCell = memo(
           </div>
         )}
 
-        <div className="hidden sm:block space-y-1 my-1 flex-1 overflow-y-auto max-h-[72px] scrollbar-thin">
-          {daySchedules.map((item) => {
+        <div className="hidden sm:block space-y-1 my-1 flex-1 overflow-hidden">
+          {visibleSchedules.map((item) => {
             const style =
               SCHEDULE_COLOR_STYLES[item.color || "default"] ||
               SCHEDULE_COLOR_STYLES.default;
@@ -146,6 +151,18 @@ export const CalendarCell = memo(
               </div>
             );
           })}
+
+          {hiddenCount > 0 && (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenPopover(dateStr);
+              }}
+              className="text-[10px] font-semibold text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded hover:bg-muted/80 transition-colors truncate cursor-pointer"
+            >
+              +{hiddenCount}개 더보기
+            </div>
+          )}
         </div>
       </div>
     );
