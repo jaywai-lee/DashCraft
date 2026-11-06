@@ -95,7 +95,6 @@ describe("createOptimisticMutation Helper", () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
 
-    // 롤백 및 토스트 검증
     expect(queryClient.getQueryData(queryKey)).toEqual(["original-item"]);
     expect(mockToastError).toHaveBeenCalledWith("요청 실패", {
       description: "Server Error",

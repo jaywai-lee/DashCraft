@@ -84,7 +84,7 @@ export const useUpdateScheduleMutation = (
         scheduleRepository.updateSchedule(scheduleId, {
           title,
           time_str: time ?? null,
-          color: color ?? null, // 💡 Supabase DB로 color 저장
+          color: color ?? null,
         }),
       updateCache: (oldSchedules = [], { scheduleId, title, time, color }) =>
         oldSchedules.map((s) =>
