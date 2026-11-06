@@ -16,6 +16,13 @@ export const useScheduleModal = () => {
     scheduleToEdit: null,
   });
 
+  const selectDate = useCallback((dateStr: string) => {
+    setModalState((prev) => ({
+      ...prev,
+      selectedDateStr: dateStr,
+    }));
+  }, []);
+
   const openAddModal = useCallback((dateStr: string) => {
     setModalState({
       isOpen: true,
@@ -44,6 +51,7 @@ export const useScheduleModal = () => {
     isOpen: modalState.isOpen,
     selectedDateStr: modalState.selectedDateStr,
     scheduleToEdit: modalState.scheduleToEdit,
+    selectDate,
     openAddModal,
     openEditModal,
     closeModal,

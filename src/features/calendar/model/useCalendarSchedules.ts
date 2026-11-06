@@ -37,6 +37,7 @@ export const useCalendarSchedules = (
         id: item.schedule_id,
         title: item.title,
         time: item.time_str ?? undefined,
+        color: item.color ?? undefined,
       };
       map.set(item.date_str, [...existing, mappedItem]);
     });
@@ -49,6 +50,7 @@ export const useCalendarSchedules = (
       title: string;
       time?: string;
       scheduleId?: string;
+      color?: string;
     }) => {
       return addScheduleMutation.mutateAsync({
         ...params,
@@ -64,6 +66,7 @@ export const useCalendarSchedules = (
       dateStr: string;
       title: string;
       time?: string;
+      color?: string;
     }) => {
       return updateScheduleMutation.mutateAsync(params);
     },

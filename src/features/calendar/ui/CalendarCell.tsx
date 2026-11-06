@@ -2,6 +2,7 @@
 
 import { memo } from "react";
 import { ScheduleItem } from "../model/types";
+import { SCHEDULE_COLOR_STYLES } from "../model/constants";
 import { getKoreanHolidayInfo } from "../lib/holidays";
 import { cn } from "@/shared/lib/utils";
 import { Trash2 } from "lucide-react";
@@ -42,7 +43,7 @@ export const CalendarCell = memo(
       <div
         onClick={() => {
           onSelectDate(dateStr);
-          if (window.innerWidth >= 640 && daySchedules.length === 0) {
+          if (window.innerWidth >= 640) {
             onOpenModal(dateStr);
           }
         }}
@@ -78,12 +79,17 @@ export const CalendarCell = memo(
 
         {daySchedules.length > 0 && (
           <div className="flex sm:hidden items-center justify-center gap-0.5 mt-auto pb-0.5">
-            {daySchedules.slice(0, 3).map((item) => (
-              <span
-                key={item.id}
-                className="w-1.5 h-1.5 rounded-full bg-primary"
-              />
-            ))}
+            {daySchedules.slice(0, 3).map((item) => {
+              const style =
+                SCHEDULE_COLOR_STYLES[item.color || "default"] ||
+                SCHEDULE_COLOR_STYLES.default;
+              return (
+                <span
+                  key={item.id}
+                  className={cn("w-1.5 h-1.5 rounded-full", style.dot)}
+                />
+              );
+            })}
             {daySchedules.length > 3 && (
               <span className="text-[8px] font-bold text-muted-foreground leading-none">
                 +
@@ -93,51 +99,57 @@ export const CalendarCell = memo(
         )}
 
         <div className="hidden sm:block space-y-1 my-1 flex-1 overflow-y-auto max-h-[72px] scrollbar-thin">
-          {daySchedules.map((item) => (
-            <div
-              key={item.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                onEditSchedule(dateStr, item);
-              }}
-              className="text-[11px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded truncate font-medium flex items-center justify-between group/item hover:bg-primary/20 transition-colors"
-            >
-              <div className="flex items-center gap-1 min-w-0 truncate">
-                {item.time && (
-                  <span className="px-1 py-0.2 bg-primary/20 text-primary text-[10px] font-mono font-semibold rounded shrink-0">
-                    {item.time}
-                  </span>
-                )}
-                <span className="truncate font-normal">{item.title}</span>
-              </div>
+          {daySchedules.map((item) => {
+            const style =
+              SCHEDULE_COLOR_STYLES[item.color || "default"] ||
+              SCHEDULE_COLOR_STYLES.default;
 
-              <button
-                type="button"
+            return (
+              <div
+                key={item.id}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onRemoveSchedule(dateStr, item.id);
+                  onEditSchedule(dateStr, item);
                 }}
-                className="inline-flex text-rose-500 hover:text-rose-700 ml-1 shrink-0 cursor-pointer p-0.5"
-                title="삭제"
+                className={cn(
+                  "text-[11px] border px-1.5 py-0.5 rounded truncate font-medium flex items-center justify-between group/item transition-colors",
+                  style.bg,
+                  style.text,
+                  style.border,
+                )}
               >
-                <Trash2 className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
+                <div className="flex items-center gap-1 min-w-0 truncate">
+                  {item.time && (
+                    <span
+                      className={cn(
+                        "px-1 py-0.2 text-[10px] font-mono font-semibold rounded shrink-0",
+                        style.timeBg,
+                      )}
+                    >
+                      {item.time}
+                    </span>
+                  )}
+                  <span className="truncate font-normal">{item.title}</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveSchedule(dateStr, item.id);
+                  }}
+                  className="inline-flex text-rose-500 hover:text-rose-700 ml-1 shrink-0 cursor-pointer p-0.5"
+                  title="삭제"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
   },
-  (prev, next) =>
-    prev.dateStr === next.dateStr &&
-    prev.isCurrentMonth === next.isCurrentMonth &&
-    prev.isToday === next.isToday &&
-    prev.isSelected === next.isSelected &&
-    prev.daySchedules === next.daySchedules &&
-    prev.onSelectDate === next.onSelectDate &&
-    prev.onOpenModal === next.onOpenModal &&
-    prev.onEditSchedule === next.onEditSchedule &&
-    prev.onRemoveSchedule === next.onRemoveSchedule,
 );
 
 CalendarCell.displayName = "CalendarCell";
