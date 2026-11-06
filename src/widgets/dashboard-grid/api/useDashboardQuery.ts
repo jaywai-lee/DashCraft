@@ -1,15 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { dashboardRepository, WidgetRow } from "./dashboardRepository";
-import { DEFAULT_CLOCK_CONFIG } from "../config/widgets.config";
+import {
+  DEFAULT_CLOCK_CONFIG,
+  WIDGET_CONFIG_MAP,
+} from "../config/widgets.config";
 import { queryKeys } from "@/shared/config/queryKeys";
 import { createOptimisticMutation } from "@/shared/lib/react-query/optimisticHelper";
+import { toast } from "sonner";
+import { generateNextWidgetTitle } from "../lib/generateWidgetTitle";
+import { Database } from "@/shared/types/database.types";
 
 interface AddWidgetParams {
   type: WidgetRow["type"];
-  title: string;
-  widgetId: string;
+  title?: string;
   color?: WidgetRow["color"];
   layout_w?: number;
+  widgetId: string;
 }
 
 interface UpdateWidgetParams {
@@ -18,6 +24,10 @@ interface UpdateWidgetParams {
   color?: WidgetRow["color"];
   layout_w?: number;
   config?: Record<string, unknown>;
+}
+
+interface MutationContext {
+  previousWidgets?: WidgetRow[];
 }
 
 export const useWidgetsQuery = () => {
@@ -30,71 +40,125 @@ export const useWidgetsQuery = () => {
 export const useAddWidgetMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation(
-    createOptimisticMutation<WidgetRow, AddWidgetParams, WidgetRow[]>({
-      queryClient,
-      queryKey: queryKeys.widgets.list(),
-      mutationFn: async ({
+  return useMutation<WidgetRow, Error, AddWidgetParams, MutationContext>({
+    mutationKey: queryKeys.widgets.list(),
+    mutationFn: async ({
+      type,
+      title: inputTitle,
+      color = "default",
+      layout_w = 1,
+      widgetId,
+    }) => {
+      const currentWidgets =
+        queryClient.getQueryData<WidgetRow[]>(queryKeys.widgets.list()) ?? [];
+
+      const otherWidgets = currentWidgets.filter(
+        (w) => w.widget_id !== widgetId,
+      );
+
+      const config = WIDGET_CONFIG_MAP[type as keyof typeof WIDGET_CONFIG_MAP];
+      const baseTitle = config?.title ?? "위젯";
+
+      const finalTitle =
+        inputTitle || generateNextWidgetTitle(type, otherWidgets, baseTitle);
+
+      const maxSortOrder =
+        currentWidgets.length > 0
+          ? Math.max(...currentWidgets.map((w) => w.sort_order))
+          : 0;
+      const nextSortOrder = maxSortOrder + 1;
+
+      const isClock = type === "clock";
+      const clockConfig = isClock ? DEFAULT_CLOCK_CONFIG : {};
+
+      return dashboardRepository.insertWidget({
+        widget_id: widgetId,
         type,
-        title,
-        widgetId,
-        color = "default",
-        layout_w = 1,
-      }) => {
-        const currentWidgets = (
-          queryClient.getQueryData<WidgetRow[]>(queryKeys.widgets.list()) ?? []
-        ).filter((w) => w.widget_id !== widgetId);
+        title: finalTitle,
+        color,
+        layout_w,
+        layout_h: 1,
+        layout_x: 0,
+        layout_y: 0,
+        sort_order: nextSortOrder,
+        config:
+          clockConfig as unknown as Database["public"]["Tables"]["widgets"]["Insert"]["config"],
+      });
+    },
+    onMutate: async (newWidgetParams) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.widgets.list() });
 
-        const maxSortOrder =
-          currentWidgets.length > 0
-            ? Math.max(...currentWidgets.map((w) => w.sort_order))
-            : 0;
-        const nextSortOrder = maxSortOrder + 1;
-        const config = type === "clock" ? DEFAULT_CLOCK_CONFIG : {};
+      const previousWidgets =
+        queryClient.getQueryData<WidgetRow[]>(queryKeys.widgets.list()) ?? [];
 
-        return dashboardRepository.insertWidget({
-          widget_id: widgetId,
-          type,
-          title,
-          color,
-          layout_w,
-          layout_h: 1,
-          layout_x: 0,
-          layout_y: 0,
-          sort_order: nextSortOrder,
-          config: config as unknown as WidgetRow["config"],
+      const config =
+        WIDGET_CONFIG_MAP[
+          newWidgetParams.type as keyof typeof WIDGET_CONFIG_MAP
+        ];
+      const baseTitle = config?.title ?? "위젯";
+
+      if (!newWidgetParams.title) {
+        newWidgetParams.title = generateNextWidgetTitle(
+          newWidgetParams.type,
+          previousWidgets,
+          baseTitle,
+        );
+      }
+
+      const finalTitle = newWidgetParams.title;
+
+      const maxSortOrder =
+        previousWidgets.length > 0
+          ? Math.max(...previousWidgets.map((w) => w.sort_order))
+          : 0;
+
+      const optimisticWidget: WidgetRow = {
+        id: crypto.randomUUID(),
+        user_id: "",
+        widget_id: newWidgetParams.widgetId,
+        type: newWidgetParams.type,
+        title: finalTitle,
+        color: newWidgetParams.color ?? "default",
+        layout_w: newWidgetParams.layout_w ?? 1,
+        layout_h: 1,
+        layout_x: 0,
+        layout_y: 0,
+        sort_order: maxSortOrder + 1,
+        config: (newWidgetParams.type === "clock"
+          ? DEFAULT_CLOCK_CONFIG
+          : {}) as unknown as WidgetRow["config"],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      queryClient.setQueryData<WidgetRow[]>(queryKeys.widgets.list(), [
+        ...previousWidgets,
+        optimisticWidget,
+      ]);
+
+      return { previousWidgets };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousWidgets) {
+        queryClient.setQueryData<WidgetRow[]>(
+          queryKeys.widgets.list(),
+          context.previousWidgets,
+        );
+      }
+      toast.error("위젯 추가 실패", { description: err.message });
+    },
+    onSettled: () => {
+      if (
+        queryClient.isMutating({
+          mutationKey: queryKeys.widgets.list(),
+        }) === 1
+      ) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.widgets.list(),
         });
-      },
-      updateCache: (oldWidgets = [], newWidgetParams) => {
-        const maxSortOrder =
-          oldWidgets.length > 0
-            ? Math.max(...oldWidgets.map((w) => w.sort_order))
-            : 0;
-
-        const optimisticWidget: WidgetRow = {
-          id: crypto.randomUUID(),
-          user_id: "",
-          widget_id: newWidgetParams.widgetId,
-          type: newWidgetParams.type,
-          title: newWidgetParams.title,
-          color: newWidgetParams.color ?? "default",
-          layout_w: newWidgetParams.layout_w ?? 1,
-          layout_h: 1,
-          layout_x: 0,
-          layout_y: 0,
-          sort_order: maxSortOrder + 1,
-          config: (newWidgetParams.type === "clock"
-            ? DEFAULT_CLOCK_CONFIG
-            : {}) as unknown as WidgetRow["config"],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        return [...oldWidgets, optimisticWidget];
-      },
-      errorMessage: "위젯 추가 실패",
-    }),
-  );
+      }
+    },
+  });
 };
 
 export const useUpdateWidgetMutation = () => {
