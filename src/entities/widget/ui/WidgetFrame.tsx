@@ -1,14 +1,17 @@
 "use client";
 
 import React, { memo, useCallback } from "react";
-import { WidgetColor } from "../model/types";
-import { cn } from "@/shared/lib/utils";
-import { COLOR_THEMES } from "../model/constants";
-import { WidgetTitleInput } from "./WidgetTitleInput";
-import { WidgetHeaderActions } from "./WidgetHeaderActions";
+import { useQueryClient } from "@tanstack/react-query";
 import { DraggableAttributes } from "@dnd-kit/core";
 import { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import { GripVertical } from "lucide-react";
+import { WidgetColor } from "../model/types";
+import { COLOR_THEMES } from "../model/constants";
+import { WidgetTitleInput } from "./WidgetTitleInput";
+import { WidgetHeaderActions } from "./WidgetHeaderActions";
+import { WidgetErrorBoundary } from "@/shared/ui/error-boundary/WidgetErrorBoundary";
+import { queryKeys } from "@/shared/config/queryKeys";
+import { cn } from "@/shared/lib/utils";
 
 interface DragHandleProps {
   attributes: DraggableAttributes;
@@ -46,6 +49,13 @@ export const WidgetFrame = memo(
     onMoveRight,
   }: WidgetFrameProps) => {
     const currentTheme = COLOR_THEMES[color] || COLOR_THEMES.default;
+    const queryClient = useQueryClient();
+
+    const handleResetQuery = useCallback(() => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.widgets.all,
+      });
+    }, [queryClient]);
 
     const handleRemove = useCallback(() => {
       onRemove?.(id);
@@ -133,7 +143,9 @@ export const WidgetFrame = memo(
         </div>
 
         <div className="flex-1 p-4 overflow-visible sm:overflow-hidden flex flex-col min-h-0">
-          {children}
+          <WidgetErrorBoundary onReset={handleResetQuery}>
+            {children}
+          </WidgetErrorBoundary>
         </div>
       </div>
     );
