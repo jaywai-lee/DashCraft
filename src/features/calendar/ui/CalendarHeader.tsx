@@ -50,7 +50,7 @@ export const CalendarHeader = memo(
         </div>
 
         <div className="flex items-center justify-center sm:justify-end w-full sm:w-1/3">
-          <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl border shrink-0 shadow-2xs mr-16">
+          <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl border shrink-0 shadow-2xs">
             <Button
               type="button"
               variant="ghost"
