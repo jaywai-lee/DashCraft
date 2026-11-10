@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState } from "react";
 import { useProfileAvatar } from "../model/useProfileAvatar";
 import { Button } from "@/shared/ui/button";
 import { createClient } from "@/shared/lib/client";
+import { getAvatarPublicUrl } from "@/shared/lib/avatar";
 import { User, Upload, Trash2, Loader2, ShieldCheck } from "lucide-react";
 
 interface ProfileSectionProps {
@@ -13,30 +14,57 @@ interface ProfileSectionProps {
 }
 
 export const ProfileSection = ({
-  userEmail,
-  avatarUrl,
+  userEmail: initialUserEmail,
+  avatarUrl: initialAvatarUrl,
   onAvatarUpdated,
-}: ProfileSectionProps) => {
+}: ProfileSectionProps = {}) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isUploading, uploadAvatar, deleteAvatar } = useProfileAvatar();
+
+  const [userEmail, setUserEmail] = useState<string | undefined>(
+    initialUserEmail,
+  );
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(
+    initialAvatarUrl,
+  );
   const [hasCustomAvatar, setHasCustomAvatar] = useState(false);
 
+  const supabase = createClient();
+
   useEffect(() => {
-    const checkCustomAvatar = async () => {
-      const supabase = createClient();
+    let isMounted = true;
+
+    const fetchUserData = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (user?.user_metadata?.avatar_path) {
-        setHasCustomAvatar(true);
-      } else {
-        setHasCustomAvatar(false);
+      if (isMounted && user) {
+        if (user.email) setUserEmail(user.email);
+        const computedUrl = getAvatarPublicUrl(user.user_metadata);
+        setAvatarUrl(computedUrl);
+        setHasCustomAvatar(Boolean(user.user_metadata?.avatar_path));
       }
     };
 
-    void checkCustomAvatar();
-  }, [avatarUrl]);
+    void fetchUserData();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (isMounted && session?.user) {
+        if (session.user.email) setUserEmail(session.user.email);
+        const computedUrl = getAvatarPublicUrl(session.user.user_metadata);
+        setAvatarUrl(computedUrl);
+        setHasCustomAvatar(Boolean(session.user.user_metadata?.avatar_path));
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -45,6 +73,13 @@ export const ProfileSection = ({
     const newPath = await uploadAvatar(file);
     if (newPath) {
       onAvatarUpdated?.();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        setAvatarUrl(getAvatarPublicUrl(user.user_metadata));
+        setHasCustomAvatar(true);
+      }
     }
 
     if (fileInputRef.current) {
@@ -56,6 +91,8 @@ export const ProfileSection = ({
     const success = await deleteAvatar();
     if (success) {
       onAvatarUpdated?.();
+      setAvatarUrl(undefined);
+      setHasCustomAvatar(false);
     }
   };
 
