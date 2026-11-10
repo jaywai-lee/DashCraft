@@ -1,5 +1,6 @@
-import { cn } from "@/shared/lib/utils";
+import React, { useId } from "react";
 import { type LucideIcon } from "lucide-react";
+import { cn } from "@/shared/lib/utils";
 
 export interface InputProps extends React.ComponentProps<"input"> {
   label?: string;
@@ -19,7 +20,8 @@ export const Input = ({
   ref,
   ...props
 }: InputProps) => {
-  const inputId = id || props.name;
+  const generatedId = useId();
+  const inputId = id || props.name || generatedId;
 
   return (
     <div className={cn("space-y-1 w-full", containerClassName)}>
