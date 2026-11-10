@@ -62,6 +62,8 @@ export const AuthFormView = () => {
       >
         <form onSubmit={handleEmailLogin} className="space-y-3.5">
           <Input
+            id="email"
+            name="email"
             label="이메일"
             type="email"
             required
@@ -86,6 +88,9 @@ export const AuthFormView = () => {
               </Link>
             </div>
             <Input
+              id="password"
+              name="password"
+              label="비밀번호"
               type="password"
               required
               icon={Lock}
