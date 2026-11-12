@@ -1,5 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { useDeleteAccount } from "./useDeleteAccount";
 import { toast } from "sonner";
 
@@ -26,6 +26,11 @@ describe("useDeleteAccount Hook", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     global.fetch = vi.fn();
+    vi.stubGlobal("location", { href: "" });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("모달 개폐(openModal / closeModal) 시 상태와 입력값이 정상 제어되어야 한다", () => {
@@ -87,5 +92,6 @@ describe("useDeleteAccount Hook", () => {
     expect(toast.success).toHaveBeenCalledWith(
       "계정이 성공적으로 삭제되었습니다.",
     );
+    expect(window.location.href).toBe("/login");
   });
 });

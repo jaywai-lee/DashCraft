@@ -67,6 +67,7 @@ describe("useClockConfig Hook", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(dashboardRepository.fetchWidgets).mockResolvedValue([]);
   });
 
   it("기본 설정값 및 DB에 저장된 Config 정보를 올바르게 읽어와야 한다", async () => {

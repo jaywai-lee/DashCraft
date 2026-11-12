@@ -42,6 +42,7 @@ describe("useTodo Hook", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(todoRepository.fetchTodos).mockResolvedValue([]);
   });
 
   it("widgetId에 해당하는 할 일 목록 및 진행률(progressPercent)을 정상적으로 불러온다", async () => {
