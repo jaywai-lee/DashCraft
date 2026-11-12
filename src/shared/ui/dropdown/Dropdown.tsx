@@ -74,8 +74,6 @@ export const DropdownTrigger = ({
       onClick={() => setIsOpen((prev) => !prev)}
       onKeyDown={handleKeyDown}
       className={cn("cursor-pointer select-none", className)}
-      role="button"
-      tabIndex={0}
       aria-expanded={isOpen}
     >
       {children}

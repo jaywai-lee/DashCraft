@@ -104,6 +104,7 @@ export const SortableWidget = memo(({ widget }: SortableWidgetProps) => {
 
   return (
     <motion.div
+      data-testid={`widget-${widget.widget_id}`}
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: isDragging ? 0.25 : 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.85 }}

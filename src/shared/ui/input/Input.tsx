@@ -28,7 +28,7 @@ export const Input = ({
       {label && (
         <label
           htmlFor={inputId}
-          className="block text-xs font-semibold text-muted-foreground"
+          className="block text-xs font-semibold text-muted-foreground select-none"
         >
           {label}
         </label>
