@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig, configDefaults } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
@@ -7,6 +7,8 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    exclude: [...configDefaults.exclude, "e2e/**"],
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
     env: {
       NEXT_PUBLIC_SUPABASE_URL: "https://test-project.supabase.co",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "test-anon-key",

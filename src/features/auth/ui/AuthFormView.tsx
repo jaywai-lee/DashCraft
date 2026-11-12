@@ -77,9 +77,6 @@ export const AuthFormView = () => {
 
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">
-                비밀번호
-              </span>
               <Link
                 href="/forgot-password"
                 className="text-[11px] text-primary hover:underline font-medium"

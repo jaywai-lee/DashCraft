@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe("Auth & Session Flow E2E Tests", () => {
   test("미인증 사용자가 보호된 라우트(/dashboard) 접근 시 /login으로 리다이렉트되어야 한다", async ({
     page,
@@ -25,7 +27,9 @@ test.describe("Auth & Session Flow E2E Tests", () => {
 
     const signupLink = page.getByRole("link", { name: /회원가입/i });
     await expect(signupLink).toBeVisible();
+
     await signupLink.click();
+    await page.waitForURL(/\/signup/);
 
     await expect(page).toHaveURL(/\/signup/);
   });
