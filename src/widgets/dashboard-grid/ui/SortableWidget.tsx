@@ -125,6 +125,7 @@ export const SortableWidget = memo(({ widget }: SortableWidgetProps) => {
         title={widget.title}
         color={widget.color as WidgetColor}
         width={widget.layout_w}
+        widgetType={widget.type}
         dragHandleProps={dragHandleProps}
         onRemove={handleRemove}
         onUpdateTitle={handleUpdateTitle}

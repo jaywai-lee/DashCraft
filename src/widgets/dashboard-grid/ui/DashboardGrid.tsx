@@ -75,6 +75,7 @@ export const DashboardGrid = () => {
               title={activeWidget.title}
               color={activeWidget.color as WidgetColor}
               width={activeWidget.layout_w}
+              widgetType={activeWidget.type}
             >
               <WidgetContentRenderer widget={activeWidget} />
             </WidgetFrame>

@@ -23,6 +23,7 @@ interface WidgetFrameProps {
   title: string;
   color?: WidgetColor;
   width?: number;
+  widgetType?: string;
   children: React.ReactNode;
   dragHandleProps?: DragHandleProps;
   onRemove?: (id: string) => void;
@@ -39,6 +40,7 @@ export const WidgetFrame = memo(
     title,
     color = "default",
     width = 1,
+    widgetType,
     children,
     dragHandleProps,
     onRemove,
@@ -143,7 +145,11 @@ export const WidgetFrame = memo(
         </div>
 
         <div className="flex-1 p-4 overflow-visible sm:overflow-hidden flex flex-col min-h-0">
-          <WidgetErrorBoundary onReset={handleResetQuery}>
+          <WidgetErrorBoundary
+            onReset={handleResetQuery}
+            widgetId={id}
+            widgetType={widgetType}
+          >
             {children}
           </WidgetErrorBoundary>
         </div>
