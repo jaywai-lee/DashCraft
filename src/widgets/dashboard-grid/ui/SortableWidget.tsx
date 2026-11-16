@@ -1,11 +1,13 @@
 "use client";
 
 import { memo, useCallback, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "framer-motion";
 import { WidgetFrame } from "@/entities/widget/ui/WidgetFrame";
 import { WidgetColor } from "@/entities/widget/model/types";
+import { queryKeys } from "@/shared/config/queryKeys";
 import { cn } from "@/shared/lib/utils";
 import { WidgetContentRenderer } from "./WidgetContentRenderer";
 import { WidgetRow } from "../api/dashboardRepository";
@@ -13,7 +15,6 @@ import {
   useDeleteWidgetMutation,
   useUpdateWidgetMutation,
   useReorderWidgetsMutation,
-  useWidgetsQuery,
 } from "../api/useDashboardQuery";
 
 interface SortableWidgetProps {
@@ -21,7 +22,7 @@ interface SortableWidgetProps {
 }
 
 export const SortableWidget = memo(({ widget }: SortableWidgetProps) => {
-  const { data: widgets = [] } = useWidgetsQuery();
+  const queryClient = useQueryClient();
   const deleteWidgetMutation = useDeleteWidgetMutation();
   const updateWidgetMutation = useUpdateWidgetMutation();
   const reorderWidgetsMutation = useReorderWidgetsMutation();
@@ -78,24 +79,29 @@ export const SortableWidget = memo(({ widget }: SortableWidgetProps) => {
   }, [updateWidgetMutation, widget.widget_id, widget.layout_w]);
 
   const handleMoveLeft = useCallback(() => {
-    const currentIndex = widgets.findIndex(
+    const currentWidgets =
+      queryClient.getQueryData<WidgetRow[]>(queryKeys.widgets.list()) ?? [];
+    const currentIndex = currentWidgets.findIndex(
       (w) => w.widget_id === widget.widget_id,
     );
     if (currentIndex <= 0) return;
 
-    const reordered = arrayMove(widgets, currentIndex, currentIndex - 1);
+    const reordered = arrayMove(currentWidgets, currentIndex, currentIndex - 1);
     reorderWidgetsMutation.mutate(reordered.map((w) => w.widget_id));
-  }, [widgets, widget.widget_id, reorderWidgetsMutation]);
+  }, [queryClient, widget.widget_id, reorderWidgetsMutation]);
 
   const handleMoveRight = useCallback(() => {
-    const currentIndex = widgets.findIndex(
+    const currentWidgets =
+      queryClient.getQueryData<WidgetRow[]>(queryKeys.widgets.list()) ?? [];
+    const currentIndex = currentWidgets.findIndex(
       (w) => w.widget_id === widget.widget_id,
     );
-    if (currentIndex === -1 || currentIndex >= widgets.length - 1) return;
+    if (currentIndex === -1 || currentIndex >= currentWidgets.length - 1)
+      return;
 
-    const reordered = arrayMove(widgets, currentIndex, currentIndex + 1);
+    const reordered = arrayMove(currentWidgets, currentIndex, currentIndex + 1);
     reorderWidgetsMutation.mutate(reordered.map((w) => w.widget_id));
-  }, [widgets, widget.widget_id, reorderWidgetsMutation]);
+  }, [queryClient, widget.widget_id, reorderWidgetsMutation]);
 
   const dragHandleProps = useMemo(
     () => ({ attributes, listeners }),

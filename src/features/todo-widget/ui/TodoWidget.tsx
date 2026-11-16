@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useTodo } from "../model/useTodo";
 import { TodoForm } from "./TodoForm";
 import { TodoList } from "./TodoList";
@@ -25,15 +26,22 @@ export const TodoWidget = memo(
       progressPercent,
       isLoading,
     } = useTodo(widgetId);
-    const { todoStatus, searchQuery } = useFilterStore();
+    const { todoStatus, searchQuery } = useFilterStore(
+      useShallow((s) => ({
+        todoStatus: s.todoStatus,
+        searchQuery: s.searchQuery,
+      })),
+    );
 
     const filteredTodos = useMemo(() => {
+      const trimmedQuery = searchQuery.trim().toLowerCase();
+
       return todos.filter((todo) => {
         if (todoStatus === "active" && todo.completed) return false;
         if (todoStatus === "completed" && !todo.completed) return false;
 
-        if (searchQuery.trim() !== "") {
-          return todo.text.toLowerCase().includes(searchQuery.toLowerCase());
+        if (trimmedQuery !== "") {
+          return todo.text.toLowerCase().includes(trimmedQuery);
         }
 
         return true;

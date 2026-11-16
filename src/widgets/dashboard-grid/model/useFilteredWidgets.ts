@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useWidgetsQuery } from "../api/useDashboardQuery";
 import { useFilterStore } from "@/features/dashboard-filter/model/useFilterStore";
 import { isWithinDateRange } from "../lib/isWithinDateRange";
@@ -9,9 +10,19 @@ export const useFilteredWidgets = (targetWidgets?: WidgetRow[]) => {
   const widgetsToFilter = targetWidgets ?? widgets;
 
   const { searchQuery, selectedWidgetType, datePreset, startDate, endDate } =
-    useFilterStore();
+    useFilterStore(
+      useShallow((s) => ({
+        searchQuery: s.searchQuery,
+        selectedWidgetType: s.selectedWidgetType,
+        datePreset: s.datePreset,
+        startDate: s.startDate,
+        endDate: s.endDate,
+      })),
+    );
 
   const filteredWidgets = useMemo(() => {
+    const trimmedQuery = searchQuery.trim().toLowerCase();
+
     return widgetsToFilter.filter((widget) => {
       if (selectedWidgetType !== "all" && widget.type !== selectedWidgetType) {
         return false;
@@ -23,10 +34,8 @@ export const useFilteredWidgets = (targetWidgets?: WidgetRow[]) => {
         return false;
       }
 
-      if (searchQuery.trim() !== "") {
-        const query = searchQuery.toLowerCase();
-        const titleMatch = widget.title.toLowerCase().includes(query);
-        return titleMatch;
+      if (trimmedQuery !== "") {
+        return widget.title.toLowerCase().includes(trimmedQuery);
       }
 
       return true;

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "@/styles/globals.css";
 import { Toaster } from "sonner";
-import { CommandPalette } from "@/features/command-palette/ui/CommandPalette";
 import Providers from "./providers";
 
 const pretendard = localFont({
@@ -47,7 +46,6 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <Providers>
           {children}
-          <CommandPalette />
           <Toaster position="top-center" richColors />
         </Providers>
       </body>

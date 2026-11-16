@@ -1,9 +1,43 @@
+"use client";
+
 import { memo } from "react";
+import dynamic from "next/dynamic";
 import { WidgetRow } from "../api/dashboardRepository";
-import { ClockWidget } from "@/features/clock-widget/ui/ClockWidget";
-import { DDayWidget } from "@/features/dday-widget/ui/DDayWidget";
-import { MemoWidget } from "@/features/memo-widget/ui/MemoWidget";
-import { TodoWidget } from "@/features/todo-widget";
+
+const WidgetLoadingFallback = () => (
+  <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
+    위젯 불러오는 중..
+  </div>
+);
+
+const TodoWidget = dynamic(
+  () => import("@/features/todo-widget").then((mod) => mod.TodoWidget),
+  { loading: WidgetLoadingFallback },
+);
+
+const ClockWidget = dynamic(
+  () =>
+    import("@/features/clock-widget/ui/ClockWidget").then(
+      (mod) => mod.ClockWidget,
+    ),
+  { loading: WidgetLoadingFallback },
+);
+
+const DDayWidget = dynamic(
+  () =>
+    import("@/features/dday-widget/ui/DDayWidget").then(
+      (mod) => mod.DDayWidget,
+    ),
+  { loading: WidgetLoadingFallback },
+);
+
+const MemoWidget = dynamic(
+  () =>
+    import("@/features/memo-widget/ui/MemoWidget").then(
+      (mod) => mod.MemoWidget,
+    ),
+  { loading: WidgetLoadingFallback },
+);
 
 interface WidgetContentRendererProps {
   widget: WidgetRow;

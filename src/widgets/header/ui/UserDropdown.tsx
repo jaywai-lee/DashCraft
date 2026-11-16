@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/shared/lib/client";
 import { getAvatarPublicUrl } from "@/shared/lib/avatar";
@@ -36,14 +37,14 @@ export const UserDropdown = ({
 
     const syncUserInfo = async () => {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (isMounted && user) {
-        if (!initialEmail && user.email) {
-          setEmail(user.email);
+      if (isMounted && session?.user) {
+        if (!initialEmail && session.user.email) {
+          setEmail(session.user.email);
         }
-        const computedUrl = getAvatarPublicUrl(user.user_metadata);
+        const computedUrl = getAvatarPublicUrl(session.user.user_metadata);
         setAvatarUrl(computedUrl);
       }
     };
@@ -97,10 +98,11 @@ export const UserDropdown = ({
         >
           <div className="w-6 h-6 rounded-full overflow-hidden bg-muted border border-border flex items-center justify-center shrink-0">
             {avatarUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
+              <Image
                 src={avatarUrl}
                 alt="프로필"
+                width={24}
+                height={24}
                 className="w-full h-full object-cover"
               />
             ) : (

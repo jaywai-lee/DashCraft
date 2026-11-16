@@ -25,26 +25,22 @@ export const DDayWidget = ({
   const { data: ddays = [], isLoading } = useDDaysQuery(widgetId);
   const addDDayMutation = useAddDDayMutation(widgetId);
   const deleteDDayMutation = useDeleteDDayMutation(widgetId);
-  const { searchQuery } = useFilterStore();
+  const searchQuery = useFilterStore((s) => s.searchQuery);
 
   const filteredAndSortedDDays = useMemo(() => {
-    let result = [...ddays];
+    const trimmedQuery = searchQuery.trim().toLowerCase();
+    const filtered = trimmedQuery
+      ? ddays.filter((item) => item.title.toLowerCase().includes(trimmedQuery))
+      : ddays;
 
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter((item) =>
-        item.title.toLowerCase().includes(query),
-      );
-    }
-
-    return result.sort((a, b) => {
-      const diffA = calculateDDay(a.target_date);
-      const diffB = calculateDDay(b.target_date);
-
-      if (diffA >= 0 && diffB < 0) return -1;
-      if (diffA < 0 && diffB >= 0) return 1;
-      return diffA - diffB;
-    });
+    return filtered
+      .map((item) => ({ item, diffDays: calculateDDay(item.target_date) }))
+      .sort((a, b) => {
+        if (a.diffDays >= 0 && b.diffDays < 0) return -1;
+        if (a.diffDays < 0 && b.diffDays >= 0) return 1;
+        return a.diffDays - b.diffDays;
+      })
+      .map(({ item }) => item);
   }, [ddays, searchQuery]);
 
   if (isLoading) {
