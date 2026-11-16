@@ -37,6 +37,13 @@ export const AuthFormView = () => {
               >
                 회원가입
               </Link>
+              <span className="mx-2 text-border">|</span>
+              <Link
+                href="/forgot-password"
+                className="text-primary font-semibold hover:underline"
+              >
+                비밀번호 찾기
+              </Link>
             </p>
             <p className="text-[10px] text-muted-foreground/80 leading-tight">
               로그인 시 DashCraft의{" "}
@@ -75,15 +82,7 @@ export const AuthFormView = () => {
             placeholder="name@example.com"
           />
 
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <Link
-                href="/forgot-password"
-                className="text-[11px] text-primary hover:underline font-medium"
-              >
-                비밀번호를 잊으셨나요?
-              </Link>
-            </div>
+          <div className="space-y-1.5">
             <Input
               id="password"
               name="password"
@@ -97,6 +96,14 @@ export const AuthFormView = () => {
               }
               placeholder="••••••••"
             />
+            <div className="flex justify-end">
+              <Link
+                href="/forgot-password"
+                className="text-[11px] text-primary hover:underline font-medium"
+              >
+                비밀번호를 잊으셨나요?
+              </Link>
+            </div>
           </div>
 
           <Button

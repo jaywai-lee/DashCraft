@@ -1,11 +1,30 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { ThemeProvider } from "./ThemeProvider";
 import { AuthSync } from "./AuthSync";
 import { WebVitalsReporter } from "./WebVitalsReporter";
+
+const ReactQueryDevtools =
+  process.env.NODE_ENV === "development"
+    ? dynamic(
+        () =>
+          import("@tanstack/react-query-devtools").then(
+            (mod) => mod.ReactQueryDevtools,
+          ),
+        { ssr: false },
+      )
+    : () => null;
+
+const CommandPalette = dynamic(
+  () =>
+    import("@/features/command-palette/ui/CommandPalette").then(
+      (mod) => mod.CommandPalette,
+    ),
+  { ssr: false },
+);
 
 interface PostgrestErrorLike {
   code?: string;
@@ -39,6 +58,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <AuthSync />
         <WebVitalsReporter />
         {children}
+        <CommandPalette />
       </ThemeProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

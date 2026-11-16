@@ -1,11 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useCommandPaletteStore } from "./useCommandPaletteStore";
 import { usePathname } from "next/navigation";
 
 export const useCommandPalette = () => {
-  const { isOpen, setIsOpen, toggle } = useCommandPaletteStore();
+  const { isOpen, setIsOpen, toggle } = useCommandPaletteStore(
+    useShallow((s) => ({
+      isOpen: s.isOpen,
+      setIsOpen: s.setIsOpen,
+      toggle: s.toggle,
+    })),
+  );
   const pathname = usePathname();
 
   useEffect(() => {

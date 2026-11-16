@@ -16,7 +16,7 @@ import { useFilteredWidgets } from "../model/useFilteredWidgets";
 import { WidgetContentRenderer } from "./WidgetContentRenderer";
 
 export const DashboardGrid = () => {
-  const { resetFilter } = useFilterStore();
+  const resetFilter = useFilterStore((s) => s.resetFilter);
 
   const {
     sensors,

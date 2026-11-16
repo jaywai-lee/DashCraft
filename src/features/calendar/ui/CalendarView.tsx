@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
+import dynamic from "next/dynamic";
 import {
   format,
   startOfMonth,
@@ -18,12 +19,21 @@ import { AppHeader } from "@/widgets/header/ui/AppHeader";
 import { cn } from "@/shared/lib/utils";
 import { CalendarCell } from "./CalendarCell";
 import { CalendarHeader } from "./CalendarHeader";
-import { ScheduleModal } from "./ScheduleModal";
-import { DaySchedulePopover } from "./DaySchedulePopover";
 import { MobileScheduleList } from "./MobileScheduleList";
+import { ScheduleItem } from "../model/types";
 import { useCalendarNavigation } from "../model/useCalendarNavigation";
 import { useScheduleModal } from "../model/useScheduleModal";
 import { useCalendarSchedules } from "../model/useCalendarSchedules";
+
+const ScheduleModal = dynamic(
+  () => import("./ScheduleModal").then((mod) => mod.ScheduleModal),
+  { ssr: false },
+);
+
+const DaySchedulePopover = dynamic(
+  () => import("./DaySchedulePopover").then((mod) => mod.DaySchedulePopover),
+  { ssr: false },
+);
 
 const WEEK_DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -60,8 +70,59 @@ export const CalendarView = () => {
     isSaving,
   } = useCalendarSchedules(startDateStr, endDateStr);
 
-  const handlePrevYear = () => setCurrentDate((prev) => subYears(prev, 1));
-  const handleNextYear = () => setCurrentDate((prev) => addYears(prev, 1));
+  const schedulesById = useMemo(() => {
+    const map = new Map<string, (typeof schedules)[number]>();
+    schedules.forEach((s) => map.set(s.schedule_id, s));
+    return map;
+  }, [schedules]);
+
+  const handlePrevYear = useCallback(
+    () => setCurrentDate((prev) => subYears(prev, 1)),
+    [setCurrentDate],
+  );
+  const handleNextYear = useCallback(
+    () => setCurrentDate((prev) => addYears(prev, 1)),
+    [setCurrentDate],
+  );
+
+  const handleOpenPopover = useCallback((dateStr: string) => {
+    setPopoverDateStr(dateStr);
+  }, []);
+
+  const handleClosePopover = useCallback(() => {
+    setPopoverDateStr(null);
+  }, []);
+
+  const handleEditCellSchedule = useCallback(
+    (_dateStr: string, schedule: ScheduleItem) => {
+      const target = schedulesById.get(schedule.id);
+      if (target) openEditModal(target);
+    },
+    [schedulesById, openEditModal],
+  );
+
+  const handleRemoveCellSchedule = useCallback(
+    (_dateStr: string, id: string) => {
+      deleteSchedule(id);
+    },
+    [deleteSchedule],
+  );
+
+  const handleEditScheduleById = useCallback(
+    (id: string) => {
+      const target = schedulesById.get(id);
+      if (target) openEditModal(target);
+    },
+    [schedulesById, openEditModal],
+  );
+
+  const handleEditPopoverSchedule = useCallback(
+    (schedule: ScheduleItem) => {
+      const target = schedulesById.get(schedule.id);
+      if (target) openEditModal(target);
+    },
+    [schedulesById, openEditModal],
+  );
 
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
@@ -72,30 +133,33 @@ export const CalendarView = () => {
     return eachDayOfInterval({ start: gridStart, end: gridEnd });
   }, [currentDate]);
 
-  const handleSaveModal = async (params: {
-    scheduleId?: string;
-    dateStr: string;
-    title: string;
-    time?: string;
-    color?: string;
-  }) => {
-    if (params.scheduleId) {
-      await updateSchedule({
-        scheduleId: params.scheduleId,
-        dateStr: params.dateStr,
-        title: params.title,
-        time: params.time,
-        color: params.color,
-      });
-    } else {
-      await addSchedule({
-        dateStr: params.dateStr,
-        title: params.title,
-        time: params.time,
-        color: params.color,
-      });
-    }
-  };
+  const handleSaveModal = useCallback(
+    async (params: {
+      scheduleId?: string;
+      dateStr: string;
+      title: string;
+      time?: string;
+      color?: string;
+    }) => {
+      if (params.scheduleId) {
+        await updateSchedule({
+          scheduleId: params.scheduleId,
+          dateStr: params.dateStr,
+          title: params.title,
+          time: params.time,
+          color: params.color,
+        });
+      } else {
+        await addSchedule({
+          dateStr: params.dateStr,
+          title: params.title,
+          time: params.time,
+          color: params.color,
+        });
+      }
+    },
+    [updateSchedule, addSchedule],
+  );
 
   const selectedDaySchedules = selectedDateStr
     ? (schedulesMap.get(selectedDateStr) ?? [])
@@ -158,16 +222,9 @@ export const CalendarView = () => {
                     daySchedules={daySchedules}
                     onSelectDate={selectDate}
                     onOpenModal={openAddModal}
-                    onOpenPopover={(dStr) => setPopoverDateStr(dStr)}
-                    onEditSchedule={(_dStr, schedule) => {
-                      const target = schedules.find(
-                        (s) => s.schedule_id === schedule.id,
-                      );
-                      if (target) openEditModal(target);
-                    }}
-                    onRemoveSchedule={(_dStr, id) => {
-                      deleteSchedule(id);
-                    }}
+                    onOpenPopover={handleOpenPopover}
+                    onEditSchedule={handleEditCellSchedule}
+                    onRemoveSchedule={handleRemoveCellSchedule}
                   />
                 );
               })}
@@ -179,36 +236,34 @@ export const CalendarView = () => {
           selectedDateStr={selectedDateStr}
           schedules={selectedDaySchedules}
           onAddSchedule={openAddModal}
-          onEditSchedule={(id) => {
-            const target = schedules.find((s) => s.schedule_id === id);
-            if (target) openEditModal(target);
-          }}
+          onEditSchedule={handleEditScheduleById}
           onDeleteSchedule={deleteSchedule}
         />
       </main>
 
-      <DaySchedulePopover
-        dateStr={popoverDateStr ?? ""}
-        schedules={popoverSchedules}
-        isOpen={Boolean(popoverDateStr)}
-        onClose={() => setPopoverDateStr(null)}
-        onAddSchedule={(dStr) => openAddModal(dStr)}
-        onEditSchedule={(schedule) => {
-          const target = schedules.find((s) => s.schedule_id === schedule.id);
-          if (target) openEditModal(target);
-        }}
-        onDeleteSchedule={deleteSchedule}
-      />
+      {Boolean(popoverDateStr) && (
+        <DaySchedulePopover
+          dateStr={popoverDateStr ?? ""}
+          schedules={popoverSchedules}
+          isOpen={Boolean(popoverDateStr)}
+          onClose={handleClosePopover}
+          onAddSchedule={openAddModal}
+          onEditSchedule={handleEditPopoverSchedule}
+          onDeleteSchedule={deleteSchedule}
+        />
+      )}
 
-      <ScheduleModal
-        isOpen={isOpen}
-        selectedDateStr={selectedDateStr}
-        scheduleToEdit={scheduleToEdit}
-        isSaving={isSaving}
-        onClose={closeModal}
-        onSave={handleSaveModal}
-        onDelete={deleteSchedule}
-      />
+      {isOpen && (
+        <ScheduleModal
+          isOpen={isOpen}
+          selectedDateStr={selectedDateStr}
+          scheduleToEdit={scheduleToEdit}
+          isSaving={isSaving}
+          onClose={closeModal}
+          onSave={handleSaveModal}
+          onDelete={deleteSchedule}
+        />
+      )}
     </div>
   );
 };

@@ -1,23 +1,33 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
-  useWidgetsQuery,
-  useUpdateWidgetMutation,
-} from "@/widgets/dashboard-grid/api/useDashboardQuery";
+  dashboardRepository,
+  WidgetRow,
+} from "@/widgets/dashboard-grid/api/dashboardRepository";
+import { useUpdateWidgetMutation } from "@/widgets/dashboard-grid/api/useDashboardQuery";
 import { DEFAULT_CLOCK_CONFIG } from "@/widgets/dashboard-grid/config/widgets.config";
+import { queryKeys } from "@/shared/config/queryKeys";
 import { requestNotificationPermission } from "../lib/audioNotifier";
 import { toast } from "sonner";
 
 export const useClockConfig = (widgetId: string) => {
-  const { data: widgets = [] } = useWidgetsQuery();
+  const { data: widgetConfig } = useQuery({
+    queryKey: queryKeys.widgets.list(),
+    queryFn: () => dashboardRepository.fetchWidgets(),
+    select: useCallback(
+      (widgets: WidgetRow[]) =>
+        widgets.find((w) => w.widget_id === widgetId)?.config,
+      [widgetId],
+    ),
+  });
+
   const updateWidgetMutation = useUpdateWidgetMutation();
 
-  const currentWidget = widgets.find((w) => w.widget_id === widgetId);
-
   const rawConfig = useMemo(
-    () => (currentWidget?.config as Record<string, unknown>) ?? {},
-    [currentWidget?.config],
+    () => (widgetConfig as Record<string, unknown>) ?? {},
+    [widgetConfig],
   );
 
   const workDuration =

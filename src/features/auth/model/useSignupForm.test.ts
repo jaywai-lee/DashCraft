@@ -67,8 +67,43 @@ describe("useSignupForm Hook", () => {
     expect(mockSignUp).not.toHaveBeenCalled();
   });
 
-  it("정상적인 입력 시 signUp 호출 후 isSent 상태가 true로 변경되어야 한다", async () => {
-    mockSignUp.mockResolvedValueOnce({ error: null });
+  it("이미 가입된 이메일인 경우(identities가 빈 배열) 에러 토스트를 노출하고 isSent는 false를 유지한다", async () => {
+    mockSignUp.mockResolvedValueOnce({
+      data: { user: { id: "existing-user", identities: [] }, session: null },
+      error: null,
+    });
+
+    const { result } = renderHook(() => useSignupForm());
+
+    act(() => {
+      result.current.setEmail("j981116@naver.com");
+      result.current.setPassword("securepass123");
+      result.current.setAgreed(true);
+    });
+
+    const fakeEvent = {
+      preventDefault: vi.fn(),
+    } as unknown as React.SubmitEvent;
+
+    await act(async () => {
+      await result.current.handleSignup(fakeEvent);
+    });
+
+    expect(mockSignUp).toHaveBeenCalled();
+    expect(mockToastError).toHaveBeenCalledWith("이미 가입된 이메일입니다.", {
+      description: "해당 이메일로 로그인하거나 비밀번호 찾기를 이용해 주세요.",
+    });
+    expect(result.current.isSent).toBe(false);
+  });
+
+  it("정상적인 신규 입력 시 signUp 호출 후 isSent 상태가 true로 변경되어야 한다", async () => {
+    mockSignUp.mockResolvedValueOnce({
+      data: {
+        user: { id: "new-user", identities: [{ id: "identity-1" }] },
+        session: null,
+      },
+      error: null,
+    });
 
     const { result } = renderHook(() => useSignupForm());
 

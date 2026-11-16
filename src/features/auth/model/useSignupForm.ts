@@ -23,9 +23,11 @@ export const useSignupForm = () => {
       return;
     }
 
+    const normalizedEmail = email.trim();
     setIsLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
+
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
@@ -36,6 +38,19 @@ export const useSignupForm = () => {
 
     if (error) {
       toast.error("회원가입 실패", { description: error.message });
+      return;
+    }
+
+    const isAlreadyRegistered =
+      Boolean(data?.user) &&
+      Array.isArray(data.user?.identities) &&
+      data.user.identities.length === 0;
+
+    if (isAlreadyRegistered) {
+      toast.error("이미 가입된 이메일입니다.", {
+        description:
+          "해당 이메일로 로그인하거나 비밀번호 찾기를 이용해 주세요.",
+      });
       return;
     }
 
