@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/shared/lib/client";
 import { setAccessToken } from "@/features/memo-widget/api/memoKeepalive";
@@ -14,7 +15,9 @@ export function AuthSync() {
 
     supabase.auth.getSession().then(({ data }) => {
       setAccessToken(data.session?.access_token ?? null);
-      currentUserId = data.session?.user.id ?? null;
+      const initialUserId = data.session?.user.id ?? null;
+      currentUserId = initialUserId;
+      Sentry.setUser(initialUserId ? { id: initialUserId } : null);
     });
 
     const {
@@ -22,6 +25,7 @@ export function AuthSync() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       setAccessToken(session?.access_token ?? null);
       const nextUserId = session?.user.id ?? null;
+      Sentry.setUser(nextUserId ? { id: nextUserId } : null);
 
       const userChanged =
         currentUserId !== null &&

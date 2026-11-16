@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
@@ -98,6 +99,10 @@ export async function POST(request: Request) {
 
     if (deleteError) {
       console.error("[AccountDelete] deleteUser 실패:", deleteError);
+      Sentry.captureException(deleteError, {
+        tags: { api: "account-delete" },
+        user: { id: user.id },
+      });
       return NextResponse.json(
         { error: "계정 삭제 처리 중 오류가 발생했습니다." },
         { status: 500 },
@@ -107,6 +112,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
     console.error("[AccountDelete] 서버 내부 예외:", err);
+    Sentry.captureException(err, {
+      tags: { api: "account-delete" },
+    });
     return NextResponse.json(
       { error: "서버 오류가 발생했습니다." },
       { status: 500 },
