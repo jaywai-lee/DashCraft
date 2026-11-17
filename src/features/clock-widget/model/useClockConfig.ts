@@ -7,7 +7,7 @@ import {
   WidgetRow,
 } from "@/widgets/dashboard-grid/api/dashboardRepository";
 import { useUpdateWidgetMutation } from "@/widgets/dashboard-grid/api/useDashboardQuery";
-import { DEFAULT_CLOCK_CONFIG } from "@/widgets/dashboard-grid/config/widgets.config";
+import { parseClockConfig } from "@/widgets/dashboard-grid/model/widgetSchemas";
 import { queryKeys } from "@/shared/config/queryKeys";
 import { requestNotificationPermission } from "../lib/audioNotifier";
 import { toast } from "sonner";
@@ -26,29 +26,22 @@ export const useClockConfig = (widgetId: string) => {
   const updateWidgetMutation = useUpdateWidgetMutation();
 
   const rawConfig = useMemo(
-    () => (widgetConfig as Record<string, unknown>) ?? {},
+    () =>
+      widgetConfig &&
+      typeof widgetConfig === "object" &&
+      !Array.isArray(widgetConfig)
+        ? (widgetConfig as Record<string, unknown>)
+        : {},
     [widgetConfig],
   );
 
-  const workDuration =
-    typeof rawConfig.workDuration === "number"
-      ? rawConfig.workDuration
-      : DEFAULT_CLOCK_CONFIG.workDuration;
+  const validatedConfig = useMemo(
+    () => parseClockConfig(widgetConfig),
+    [widgetConfig],
+  );
 
-  const breakDuration =
-    typeof rawConfig.breakDuration === "number"
-      ? rawConfig.breakDuration
-      : DEFAULT_CLOCK_CONFIG.breakDuration;
-
-  const isSoundEnabled =
-    typeof rawConfig.isSoundEnabled === "boolean"
-      ? rawConfig.isSoundEnabled
-      : DEFAULT_CLOCK_CONFIG.isSoundEnabled;
-
-  const isNotificationEnabled =
-    typeof rawConfig.isNotificationEnabled === "boolean"
-      ? rawConfig.isNotificationEnabled
-      : DEFAULT_CLOCK_CONFIG.isNotificationEnabled;
+  const { workDuration, breakDuration, isSoundEnabled, isNotificationEnabled } =
+    validatedConfig;
 
   const toggleSound = useCallback(() => {
     updateWidgetMutation.mutate({

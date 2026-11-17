@@ -1,5 +1,6 @@
 import { createClient } from "@/shared/lib/client";
 import { Database } from "@/shared/types/database.types";
+import { parseWidgetRows } from "../model/widgetSchemas";
 
 export type WidgetRow = Database["public"]["Tables"]["widgets"]["Row"];
 export type WidgetInsert = Database["public"]["Tables"]["widgets"]["Insert"];
@@ -14,7 +15,7 @@ export const dashboardRepository = {
       .order("sort_order", { ascending: true });
 
     if (error) throw error;
-    return data ?? [];
+    return parseWidgetRows(data ?? []);
   },
 
   async insertWidget(widget: WidgetInsert): Promise<WidgetRow> {
