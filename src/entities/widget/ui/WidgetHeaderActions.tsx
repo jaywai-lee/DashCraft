@@ -46,7 +46,10 @@ export const WidgetHeaderActions = memo(
         <WidgetColorPicker color={color} onSelectColor={onSelectColor} />
 
         <Dropdown>
-          <DropdownTrigger className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-md transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0">
+          <DropdownTrigger
+            aria-label="위젯 설정 및 위치 이동 메뉴"
+            className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-md transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
+          >
             <MoreVertical className="w-3.5 h-3.5" />
           </DropdownTrigger>
 
