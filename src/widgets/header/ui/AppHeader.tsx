@@ -9,6 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/utils";
 import { Calendar, LayoutGrid, Search } from "lucide-react";
 import { ThemeToggle } from "@/shared/ui/theme-toggle/ThemeToggle";
+import { BrandLogo } from "@/shared/ui/brand-logo/BrandLogo";
 
 interface AppHeaderProps {
   userEmail?: string;
@@ -34,13 +35,12 @@ export const AppHeader = ({
   return (
     <header className="px-4 sm:px-6 h-16 flex items-center justify-between gap-4 border-b bg-background/80 backdrop-blur-md sticky top-0 z-40 w-full">
       <div className="flex items-center gap-4 sm:gap-6">
-        <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-          <div className="p-1.5 bg-primary text-primary-foreground rounded-lg">
-            <LayoutGrid className="w-4 h-4" />
-          </div>
-          <span className="font-extrabold text-base tracking-tight hidden sm:inline-block text-foreground">
-            DashCraft
-          </span>
+        <Link
+          href="/dashboard"
+          className="flex items-center shrink-0 hover:opacity-90 transition-opacity"
+          aria-label="DashCraft 대시보드로 이동"
+        >
+          <BrandLogo variant="responsive" size="md" priority />
         </Link>
 
         <nav className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl border border-border/50">

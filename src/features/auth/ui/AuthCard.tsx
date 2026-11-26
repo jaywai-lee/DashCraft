@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { LayoutGrid } from "lucide-react";
+import Link from "next/link";
+import { BrandLogo } from "@/shared/ui/brand-logo/BrandLogo";
 
 interface AuthCardProps {
   title: string;
@@ -20,8 +21,14 @@ export const AuthCard = ({
     <div className="min-h-screen flex items-center justify-center bg-muted/20 px-4 py-8 md:py-16">
       <div className="w-full max-w-md md:max-w-lg lg:max-w-xl bg-background border rounded-3xl p-6 sm:p-8 md:p-10 shadow-xl space-y-6 md:space-y-8 transition-all">
         <div className="text-center space-y-2 md:space-y-3">
-          <div className="inline-flex p-3 md:p-4 bg-primary text-primary-foreground rounded-2xl shadow-md mb-1">
-            <LayoutGrid className="w-6 h-6 md:w-8 md:h-8" />
+          <div className="flex justify-center mb-1">
+            <Link
+              href="/"
+              className="inline-flex hover:opacity-90 transition-opacity"
+              aria-label="DashCraft 홈으로 이동"
+            >
+              <BrandLogo variant="icon" size="lg" priority />
+            </Link>
           </div>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-foreground">
             {title}
