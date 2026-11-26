@@ -36,14 +36,14 @@
 
 ```text
 src/
-├── app/          # Next.js App Router 페이지, API 라우트(/api/health, /api/account/delete), 인증 콜백
+├── app/          # Next.js App Router 페이지, API 라우트
 ├── widgets/      # 랜딩 페이지 섹션, 앱 헤더, 대시보드 위젯 그리드 컨테이너
 ├── features/     # 인증, 캘린더, 시계/뽀모도로, 할 일, 메모, D-Day, 커맨드 팔레트, 필터, 계정 설정
 ├── entities/     # 위젯 공통 프레임·헤더 액션·컬러 피커·도메인 모델
 └── shared/       # Supabase 클라이언트, Sentry/Web Vitals 모니터링, 공용 UI 컴포넌트, 유틸리티
 supabase/
 └── migrations/   # PostgreSQL 테이블·트리거·RLS 정책 및 avatars Storage 버킷 마이그레이션
-e2e/              # Playwright 브라우저 E2E 테스트 스위트
+e2e/              # Playwright 브라우저 E2E 테스트
 ```
 
 ---

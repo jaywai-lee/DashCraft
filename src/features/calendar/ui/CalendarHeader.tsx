@@ -77,7 +77,7 @@ export const CalendarHeader = memo(
               variant="ghost"
               size="sm"
               onClick={onToday}
-              className="h-7 sm:h-8 text-xs font-semibold px-2.5 cursor-pointer shrink-0 text-primary hover:bg-background/80"
+              className="h-7 sm:h-8 text-xs font-semibold px-2.5 cursor-pointer shrink-0 text-primary hover:text-primary"
             >
               <CalendarIcon className="w-3.5 h-3.5 mr-1" />
               <span>오늘</span>

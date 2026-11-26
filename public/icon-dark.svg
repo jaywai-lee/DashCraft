@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" width="360" height="360" fill="none">
+  <defs>
+    <linearGradient id="dc-blue" x1="58" y1="0" x2="58" y2="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1D4ED8"/>
+      <stop offset="50%" stop-color="#1E40AF"/>
+      <stop offset="100%" stop-color="#1E3A8A"/>
+    </linearGradient>
+    <linearGradient id="dc-sky" x1="258" y1="0" x2="258" y2="160" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="dc-amber" x1="258" y1="200" x2="258" y2="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#D97706"/>
+      <stop offset="50%" stop-color="#B45309"/>
+      <stop offset="100%" stop-color="#92400E"/>
+    </linearGradient>
+  </defs>
+  <!-- Left vertical bar -->
+  <path d="M45 0 H98 A18 18 0 0 1 116 18 V342 A18 18 0 0 1 98 360 H45 A45 45 0 0 1 0 315 V45 A45 45 0 0 1 45 0 Z" fill="url(#dc-blue)"/>
+  <!-- Top-right quarter block -->
+  <path d="M174 0 H229 A131 131 0 0 1 360 131 V142 A18 18 0 0 1 342 160 H174 A18 18 0 0 1 156 142 V18 A18 18 0 0 1 174 0 Z" fill="url(#dc-sky)"/>
+  <!-- Bottom-right quarter block -->
+  <path d="M174 200 H342 A18 18 0 0 1 360 218 V229 A131 131 0 0 1 229 360 H174 A18 18 0 0 1 156 342 V218 A18 18 0 0 1 174 200 Z" fill="url(#dc-amber)"/>
+</svg>
